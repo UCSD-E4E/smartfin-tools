@@ -4,9 +4,12 @@ import base64
 from typing import Dict, List, Union
 import pandas as pd
 import numpy as np
+import logging
 
-
-def decodeRecord(record: str) -> List:
+def decodeRecord(record: str) -> List[Dict[str, Union[int, float]]]:
+    logger = logging.getLogger("Smartfin Decoder")
+    if len(record) % 5 != 0:
+        logger.warning("Record does not contain a multiple of 5 characters!")
     packet = base64.b85decode(record)
     return decodePacket(packet)
 
@@ -71,6 +74,7 @@ __parserTable = {
 
 
 def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
+    logger = logging.getLogger("Smartfin Decoder")
     packetList = []
     idx = 0
     while idx < len(packet):
@@ -98,6 +102,7 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             ensemble['dataType'] = dataType
             packetList.append(ensemble)
         elif dataType == 0:
+            logger.warning("Unknown data type: 0")
             continue
         elif dataType == 0x0F:
             # text
@@ -111,6 +116,8 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             ensemble['timestamp'] = timestamp
             ensemble['dataType'] = dataType
             packetList.append(ensemble)
+        else:
+            logger.warning(f'Unknown data type: {dataType}')
     return packetList
 
 
