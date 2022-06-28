@@ -41,15 +41,17 @@ def saveRawData():
 
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
-    pdArray =[]
+    pdArray = []
     with open(filepath) as df:
         for line in df:
             currentRecord = decodeRecord(line.strip())
             df = pd.DataFrame (currentRecord, columns = ['timestamp','temp+water', 'xAcc','yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag','yMag','zMag','lat','lon'])
             df = convertToSI(df)
-            pdArray.append(df)
-
-
+            if(len(pdArray) > 0):
+                pdArray[0] = pdArray[0].append(df)
+            else:
+                pdArray.append(df)
+    
     return pdArray
 
 def plotData(files):
@@ -96,6 +98,6 @@ def plotData(files):
         plotCount+=1
 
 saveRawData()
-decodedData = decodeFromFile("06|27|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile("06|28|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 
