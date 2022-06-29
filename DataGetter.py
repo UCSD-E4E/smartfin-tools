@@ -57,6 +57,7 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
 def plotData(files):
     plotCount = 0
     for df in files:
+        df["timestamp"] = df["timestamp"].values[::-1]
         fig, axs = plt.subplots(3,4,figsize=(15,15))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
         axs[0][0].set_title("X acc vs timestamp")
@@ -93,11 +94,12 @@ def plotData(files):
                     wspace=0.4, 
                     hspace=0.4)
 
-        plt.savefig("testing" + str(plotCount) + ".png")
+        plt.savefig(today + str(plotCount) + ".png")
         plt.close()
         plotCount+=1
+    df.to_csv(today + "-data.csv")
 
 saveRawData()
-decodedData = decodeFromFile("06|28|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile(today + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 
