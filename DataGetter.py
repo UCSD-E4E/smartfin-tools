@@ -39,7 +39,6 @@ def saveRawData():
 
     df.close()
 
-
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
     pdArray = []
     with open(filepath) as df:
@@ -57,8 +56,9 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
 def plotData(files):
     plotCount = 0
     for df in files:
-        df["timestamp"] = df["timestamp"].values[::-1]
-        fig, axs = plt.subplots(3,4,figsize=(15,15))
+        #df = df.iloc[: , :] #deletes the first 30 timestamps which are no good (warm up init time)
+        df.to_csv("session_data.csv")
+        fig, axs = plt.subplots(3,4,figsize=(20,20))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
         axs[0][0].set_title("X acc vs timestamp")
         axs[0][1].plot(df['timestamp'], df['Y Acceleration'])
