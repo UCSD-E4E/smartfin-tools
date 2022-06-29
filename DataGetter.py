@@ -94,12 +94,11 @@ def plotData(files):
                     wspace=0.4, 
                     hspace=0.4)
 
-        plt.savefig(today + str(plotCount) + ".png")
+        plt.savefig("session_data" + str(plotCount) + ".png")
         plt.close()
         plotCount+=1
-    df.to_csv(today + "-data.csv")
-
+        
 saveRawData()
-decodedData = decodeFromFile(today + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile("06|29|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 
