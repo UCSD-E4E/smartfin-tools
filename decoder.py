@@ -110,7 +110,7 @@ def decodePacket(packet:bytes)->List:
     return packetList
 
 def convertToSI(df:pd.DataFrame):
-    df['Temperature'] = df['temp+water'] / 333.87 + 21.0
+    df['Temperature'] = df['temp+water'] / 333.87 +14.0
     waterDetect = list(df['Temperature'])
     for i in range(len(waterDetect)):
         if not np.isnan(waterDetect[i]):
@@ -133,7 +133,12 @@ def convertToSI(df:pd.DataFrame):
     if 'yMag' in df.columns:
         df['Y Magnetic Field'] = df['yMag'] * 0.15
     if 'zMag' in df.columns:
-        df['Z Magnetic Field'] = df['zMag'] * 0.15
+        df['Z Magnetic Field'] = df['zMag'] * 0.15 
+    if 'lat' in df.columns:
+        df['Latitude'] = df['lat'] / 1000000.0
+    if 'lon' in df.columns:
+        df['Longitude'] = df['lon'] / 1000000.0
+        
     return df
 
 

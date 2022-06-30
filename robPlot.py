@@ -5,42 +5,13 @@ from decoder import *
 from datetime import date
 import pandas as pd
 from matplotlib import pyplot as plt
+from geopy.geocoders import Nominatim
 today = date.today().strftime("%m|%d|%y")
-SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
+#SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
+geolocator = Nominatim(user_agent="smartfin")
+
+
 # For example, $ python3 DataGetter.py /dev/ttyACM0
-
-def saveRawData():
-    ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
-
-    dataToBeDecoded = []
-
-    ser.write(('#CLI\r').encode()) #Access CLI through terminal
-
-    ser.write(('R\r').encode())
-            
-    ser.write(('R\r').encode())
-
-    while True:
-        data = ser.readline().decode()
-        # print(data)
-        if('{' in data):
-            dataToBeDecoded.append(data)
-
-        #ser.write(('D\r').encode())
-        ser.write(('N\r').encode())
-        
-        
-        if(data == "End of Directory\n"): #Continue reading and appending decoded files to array until end of directory
-            #ser.write(('D\r').encode())
-            break
-        
-        ser.write(('R\r').encode())
-
-    df = open(today + "-data.sfr", "x") #Save each session as a new line in sfr file
-    for i in range(len(dataToBeDecoded)):
-        df.write(dataToBeDecoded[i][:-1] + "\n")
-
-    df.close()
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
     pdArray = []
@@ -112,8 +83,7 @@ def plotData(files):
         plt.savefig("session_data" + str(plotCount) + ".png")
         plt.close()
         plotCount+=1
-           
-saveRawData()
+        
 decodedData = decodeFromFile("06|30|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 
