@@ -34,6 +34,7 @@ def saveRawData(fp):
         ser.write(('R\r').encode()) #Displays file contents (encoded)
         if('{' in data):
             dataToBeDecoded.append(data) #Adds data to list if valid
+            ser.write(('D\r').encode())
 
         ser.write(('N\r').encode()) #Next file
 
