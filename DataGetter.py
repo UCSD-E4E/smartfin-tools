@@ -7,41 +7,39 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from time import sleep
 
+CLI_WAIT = 2
+
 today = date.today().strftime("%m_%d_%y")
 SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
-raw_data_fp = "./{date}_data.sfr"
+raw_data_fp = "./{date}_raw_data.sfr"
 csv_data_fp = "./{date}_session{session_num}.csv"
+plot_data_fp = "./{date}_session{session_num}_plt.png"
 
 def saveRawData(fp):
     ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
-    sleep(1)
     dataToBeDecoded = []
 
     ser.write(('#CLI\r').encode()) #Access CLI through terminal
-    ser.write(('L\r').encode())
 
+    sleep(CLI_WAIT)
     ser.write(('R\r').encode()) #Accesses file system
-    ser.write(('R\r').encode())
-
 
     while True:
-        data = ser.readline().decode()
-        print(data)
-        if('{' in data):
-            dataToBeDecoded.append(data)
-
-        ser.write(('N\r').encode())
-        
+        data = ser.readline().decode() #Reads console output
         if(data == "End of Directory\n"): #Continue reading and appending decoded files to array until end of directory
             break
-        
-        ser.write(('R\r').encode())
+    
+        ser.write(('R\r').encode()) #Displays file contents (encoded)
+        if('{' in data):
+            dataToBeDecoded.append(data) #Adds data to list if valid
 
+        ser.write(('N\r').encode()) #Next file
 
-    ser.write(('X\r').encode())
+    ser.write(('X\r').encode()) #Exits CLI state
 
+    #writes data to file
     with open(fp, "a") as df:
         for i in range(len(dataToBeDecoded)):
             df.write(dataToBeDecoded[i][:-1] + "\n")
@@ -61,8 +59,7 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
     return pdArray
 
 def plotData(files):
-    plotCount = 0
-    for df in files:
+    for i, df in enumerate(files):
         fig, axs = plt.subplots(3,4,figsize=(15,15))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
         axs[0][0].set_title("X acc vs timestamp")
@@ -99,9 +96,8 @@ def plotData(files):
                     wspace=0.4, 
                     hspace=0.4)
 
-        plt.savefig("./testing" + str(plotCount) + ".png")
+        plt.savefig(plot_data_fp.format(date=today, session_num=i))
         plt.close()
-        plotCount+=1
 
 def save_to_csv(decodedData):
     for i, df in enumerate(decodedData):
@@ -112,5 +108,5 @@ if __name__ == "__main__":
     saveRawData(raw_data_fp_today)
     decodedData = decodeFromFile(raw_data_fp_today) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
     save_to_csv(decodedData)
-    #plotData(decodedData)
+    plotData(decodedData)
 
