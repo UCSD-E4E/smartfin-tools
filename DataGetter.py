@@ -6,20 +6,25 @@ from datetime import date
 import pandas as pd
 from matplotlib import pyplot as plt
 from time import sleep
-today = date.today().strftime("%m|%d|%y")
+
+today = date.today().strftime("%m_%d_%y")
 SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
-def saveRawData():
+raw_data_fp = "./{date}_data.sfr"
+csv_data_fp = "./{date}_session{session_num}.csv"
+
+def saveRawData(fp):
     ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
     sleep(1)
     dataToBeDecoded = []
 
     ser.write(('#CLI\r').encode()) #Access CLI through terminal
+    ser.write(('L\r').encode())
 
+    ser.write(('R\r').encode()) #Accesses file system
     ser.write(('R\r').encode())
-            
-    ser.write(('R\r').encode())
+
 
     while True:
         data = ser.readline().decode()
@@ -34,11 +39,13 @@ def saveRawData():
         
         ser.write(('R\r').encode())
 
-    df = open(today + "-data.sfr", "x") #Save each session as a new line in sfr file
-    for i in range(len(dataToBeDecoded)):
-        df.write(dataToBeDecoded[i][:-1] + "\n")
 
-    df.close()
+    ser.write(('X\r').encode())
+
+    with open(fp, "a") as df:
+        for i in range(len(dataToBeDecoded)):
+            df.write(dataToBeDecoded[i][:-1] + "\n")
+
 
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
@@ -92,11 +99,18 @@ def plotData(files):
                     wspace=0.4, 
                     hspace=0.4)
 
-        plt.savefig("testing" + str(plotCount) + ".png")
+        plt.savefig("./testing" + str(plotCount) + ".png")
         plt.close()
         plotCount+=1
 
-saveRawData()
-decodedData = decodeFromFile("06|27|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
-plotData(decodedData)
+def save_to_csv(decodedData):
+    for i, df in enumerate(decodedData):
+        df.to_csv(csv_data_fp.format(date=today, session_num=i), sep=",")
+
+if __name__ == "__main__":
+    raw_data_fp_today = raw_data_fp.format(date=today)
+    saveRawData(raw_data_fp_today)
+    decodedData = decodeFromFile(raw_data_fp_today) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+    save_to_csv(decodedData)
+    #plotData(decodedData)
 

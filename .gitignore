@@ -134,3 +134,4 @@ credentials.json
 
 test_results/
 **.csv
+*.sfr
