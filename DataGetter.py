@@ -5,13 +5,14 @@ from decoder import *
 from datetime import date
 import pandas as pd
 from matplotlib import pyplot as plt
+from time import sleep
 today = date.today().strftime("%m|%d|%y")
 SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
 def saveRawData():
     ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
-
+    sleep(1)
     dataToBeDecoded = []
 
     ser.write(('#CLI\r').encode()) #Access CLI through terminal
@@ -22,7 +23,7 @@ def saveRawData():
 
     while True:
         data = ser.readline().decode()
-        # print(data)
+        print(data)
         if('{' in data):
             dataToBeDecoded.append(data)
 
