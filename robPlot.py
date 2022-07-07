@@ -35,9 +35,16 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
     mean = dfFull["timestamp"].mean()
     
     print("Broken Lines: ", brokenLines, "\n")
-    # for every row, delete it if the timestamp is > 2x the mean.
-    dfFull = dfFull[dfFull['timestamp'] < 2*mean] 
+    # for every row, delete it if the timestamp is > 2x the mean (plus some buffer).
+    dfFull = dfFull[dfFull['timestamp'] < (2*mean + 10)] 
     pdArray[0] = dfFull
+    dfFull['DTemp'] = dfFull['Temperature'].diff(periods=300)
+    #if the temperature hasnt changed much the last 6 mins
+    dfFull['isSettled'] = dfFull['DTemp'].abs() < 0.2
+    
+    temporary = (dfFull['isSettled']) * dfFull['Temperature']
+    dfFull['settledTemps'] = temporary
+    dfFull['settledTemps'] = dfFull['settledTemps'].replace({'0':np.nan, 0:np.nan})
     return pdArray
 
 def plotData(files):
@@ -46,7 +53,7 @@ def plotData(files):
         df.to_csv("session_data.csv")
         fig, axs = plt.subplots(3,4,figsize=(20,20))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
-        axs[0][0].set_title("X acc vs timestamp")
+        axs[0][0].set_title("Lat, Long: " + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + "\n\nX acc vs timestamp")
         axs[0][0].set_ylim(-3,3)
         axs[0][1].plot(df['timestamp'], df['Y Acceleration'])
         axs[0][1].set_ylim(-3,3)
@@ -68,22 +75,20 @@ def plotData(files):
         axs[1][2].plot(df['timestamp'], df['Z Angular Velocity'])
         axs[1][2].set_ylim(-600,600)
         axs[1][2].set_title("Z gyro vs timestamp")
-        axs[1][3].plot(df['timestamp'], df['Latitude'])
-        axs[1][3].set_ylim(32,33)
-        axs[1][3].set_title("Latitude: " + str(df['Latitude'].mean()))
+        axs[1][3].plot(df['timestamp'], df['DTemp'])
+        axs[1][3].set_title("Change in temperature 5min ago vs. timestamp: ")
 
-        axs[2][0].plot(df['timestamp'], df['X Magnetic Field'])
+        axs[2][0].scatter( df['timestamp'], df['X Magnetic Field'])
         axs[2][0].set_ylim(-6000,6000)
         axs[2][0].set_title("X mag vs timestamp")
-        axs[2][1].plot(df['timestamp'], df['Y Magnetic Field'])
+        axs[2][1].scatter(df['timestamp'], df['Y Magnetic Field'])
         axs[2][1].set_ylim(-6000,6000)
         axs[2][1].set_title("Y mag vs timestamp")
-        axs[2][2].plot(df['timestamp'], df['Z Magnetic Field'])
+        axs[2][2].scatter(df['timestamp'], df['Z Magnetic Field'])
         axs[2][2].set_ylim(-6000,6000)
         axs[2][2].set_title("Z mag vs timestamp")
-        axs[2][3].plot(df['timestamp'], df['Longitude'])
-        axs[2][3].set_ylim(-117,-118)
-        axs[2][3].set_title("Longitude: " + str(df['Longitude'].mean()))
+        axs[2][3].scatter(df['timestamp'], df['settledTemps'])
+        axs[2][3].set_title("Settled Temps / Est. Sea Temp\nMean: " + str(round(df['settledTemps'].mean(),2)) + " degrees C\nMedian: " + str(round(df['settledTemps'].median(),2)) + " degrees C")
 
         plt.subplots_adjust(left=0.1,
                     bottom=0.1, 
@@ -97,5 +102,6 @@ def plotData(files):
         plotCount+=1
         
 decodedData = decodeFromFile("07|07|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+oceanTemp = 0
 plotData(decodedData)
 
