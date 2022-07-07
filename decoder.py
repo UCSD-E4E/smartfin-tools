@@ -82,7 +82,6 @@ def decodePacket(packet:bytes)->List:
         if dataType in parserTable:
             # can use from parser table
             parseParams = parserTable[dataType]
-            assert(len(packet) - idx >= parseParams['len'])
             ensemblePayload = packet[idx:idx + parseParams['len']]
             idx += parseParams['len']
             ensembleFields = struct.unpack(parseParams['fmt'], ensemblePayload)
@@ -110,7 +109,7 @@ def decodePacket(packet:bytes)->List:
     return packetList
 
 def convertToSI(df:pd.DataFrame):
-    df['Temperature'] = df['temp+water'] / 333.87 +14.0
+    df['Temperature'] = df['temp+water'] / 126.75 + 0.205
     waterDetect = list(df['Temperature'])
     for i in range(len(waterDetect)):
         if not np.isnan(waterDetect[i]):

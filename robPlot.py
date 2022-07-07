@@ -30,7 +30,6 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
 def plotData(files):
     plotCount = 0
     for df in files:
-        #df = df.iloc[: , :] #deletes the first 30 timestamps which are no good (warm up init time)
         df.to_csv("session_data.csv")
         fig, axs = plt.subplots(3,4,figsize=(20,20))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
@@ -84,6 +83,6 @@ def plotData(files):
         plt.close()
         plotCount+=1
         
-decodedData = decodeFromFile("06|30|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile("07|06|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 

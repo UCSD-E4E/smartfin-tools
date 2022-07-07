@@ -90,7 +90,6 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
         if dataType in __parserTable:
             # can use from parser table
             parseParams = __parserTable[dataType]
-            assert(len(packet) - idx >= parseParams['len'])
             ensemblePayload = packet[idx:idx + parseParams['len']]
             idx += parseParams['len']
             ensembleFields = struct.unpack(parseParams['fmt'], ensemblePayload)
