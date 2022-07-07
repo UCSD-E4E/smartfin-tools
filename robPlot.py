@@ -11,20 +11,33 @@ today = date.today().strftime("%m|%d|%y")
 geolocator = Nominatim(user_agent="smartfin")
 
 
+
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
     pdArray = []
+    brokenLines = 0
     with open(filepath) as df:
         for line in df:
-            currentRecord = decodeRecord(line.strip())
-            df = pd.DataFrame (currentRecord, columns = ['timestamp','temp+water', 'xAcc','yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag','yMag','zMag','lat','lon'])
-            df = convertToSI(df)
-            if(len(pdArray) > 0):
-                pdArray[0] = pdArray[0].append(df)
-            else:
-                pdArray.append(df)
+            try:
+                currentRecord = decodeRecord(line.strip())
+                df = pd.DataFrame (currentRecord, columns = ['timestamp','temp+water', 'xAcc','yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag','yMag','zMag','lat','lon'])
+                df = convertToSI(df)
+                if(len(pdArray) > 0):
+                    pdArray[0] = pdArray[0].append(df)
+                else:
+                    pdArray.append(df)
+            except:
+                print("broken line...")
+                brokenLines = brokenLines + 1
+
+    dfFull = pdArray[0].sort_values(by=['timestamp'])
+    mean = dfFull["timestamp"].mean()
     
+    print("Broken Lines: ", brokenLines, "\n")
+    # for every row, delete it if the timestamp is > 2x the mean.
+    dfFull = dfFull[dfFull['timestamp'] < 2*mean] 
+    pdArray[0] = dfFull
     return pdArray
 
 def plotData(files):
@@ -83,6 +96,6 @@ def plotData(files):
         plt.close()
         plotCount+=1
         
-decodedData = decodeFromFile("07|06|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile("07|07|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 

@@ -114,6 +114,6 @@ def plotData(files):
         plotCount+=1
            
 saveRawData()
-decodedData = decodeFromFile("07|06|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile("07|07|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 
