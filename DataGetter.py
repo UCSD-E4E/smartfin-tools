@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 today = date.today().strftime("%m|%d|%y")
 SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 # For example, $ python3 DataGetter.py /dev/ttyACM0
+today = date.today().strftime("%m|%d|%y")
 
 def saveRawData():
     ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
@@ -114,6 +115,6 @@ def plotData(files):
         plotCount+=1
            
 saveRawData()
-decodedData = decodeFromFile("07|07|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile(today + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 

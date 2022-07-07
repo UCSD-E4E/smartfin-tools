@@ -12,13 +12,16 @@ geolocator = Nominatim(user_agent="smartfin")
 
 
 
+
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
     pdArray = []
     brokenLines = 0
+    totalLines = 0
     with open(filepath) as df:
         for line in df:
+            totalLines = totalLines + 1
             try:
                 currentRecord = decodeRecord(line.strip())
                 df = pd.DataFrame (currentRecord, columns = ['timestamp','temp+water', 'xAcc','yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag','yMag','zMag','lat','lon'])
@@ -35,9 +38,13 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
     mean = dfFull["timestamp"].mean()
     
     print("Broken Lines: ", brokenLines, "\n")
+    dfFull['lostPackets'] = brokenLines
+    dfFull['totalPackets'] = totalLines
     # for every row, delete it if the timestamp is > 2x the mean (plus some buffer).
     dfFull = dfFull[dfFull['timestamp'] < (2*mean + 10)] 
-    pdArray[0] = dfFull
+
+   
+    
     dfFull['DTemp'] = dfFull['Temperature'].diff(periods=300)
     #if the temperature hasnt changed much the last 6 mins
     dfFull['isSettled'] = dfFull['DTemp'].abs() < 0.2
@@ -45,6 +52,9 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
     temporary = (dfFull['isSettled']) * dfFull['Temperature']
     dfFull['settledTemps'] = temporary
     dfFull['settledTemps'] = dfFull['settledTemps'].replace({'0':np.nan, 0:np.nan})
+
+    pdArray[0] = dfFull
+    
     return pdArray
 
 def plotData(files):
@@ -53,7 +63,7 @@ def plotData(files):
         df.to_csv("session_data.csv")
         fig, axs = plt.subplots(3,4,figsize=(20,20))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
-        axs[0][0].set_title("Lat, Long: " + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + "\n\nX acc vs timestamp")
+        axs[0][0].set_title("Lat, Long: " + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + "\nProccessed: " + today + "\nSea Temperature: " + str(round(df['settledTemps'].median(),2)) + " degrees C\nLost or corrupted " + str(int(df['lostPackets'].median())) + " of " +  str(int(df['totalPackets'].median())) + " total packets (" + str(round((df['lostPackets'].median()/df['totalPackets'].median())*100,2))+ "%)" + "\n\nX acc vs timestamp") 
         axs[0][0].set_ylim(-3,3)
         axs[0][1].plot(df['timestamp'], df['Y Acceleration'])
         axs[0][1].set_ylim(-3,3)
@@ -68,12 +78,12 @@ def plotData(files):
 
         axs[1][0].plot(df['timestamp'], df['X Angular Velocity'])
         axs[1][0].set_title("X gyro vs timestamp")
-        axs[1][0].set_ylim(-600,600) 
+        axs[1][0].set_ylim(-300,300) 
         axs[1][1].plot(df['timestamp'], df['Y Angular Velocity'])
-        axs[1][1].set_ylim(-600,600)
+        axs[1][1].set_ylim(-300,300)
         axs[1][1].set_title("Y gyro vs timestamp")
         axs[1][2].plot(df['timestamp'], df['Z Angular Velocity'])
-        axs[1][2].set_ylim(-600,600)
+        axs[1][2].set_ylim(-300,300)
         axs[1][2].set_title("Z gyro vs timestamp")
         axs[1][3].plot(df['timestamp'], df['DTemp'])
         axs[1][3].set_title("Change in temperature 5min ago vs. timestamp: ")
@@ -101,7 +111,7 @@ def plotData(files):
         plt.close()
         plotCount+=1
         
-decodedData = decodeFromFile("07|07|22-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile(today + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 oceanTemp = 0
 plotData(decodedData)
 
