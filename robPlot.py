@@ -104,7 +104,9 @@ def plotData(files):
         axs[1][2].set_title("Z gyro vs timestamp")
         axs[1][2].axhline(0, color="orange", linestyle="dotted")
         axs[1][3].plot(df['timestamp'], df['DTemp'])
-        axs[1][3].set_title("Change in temperature 5min ago vs. timestamp: ")
+        axs[1][3].plot(df['timestamp'], df['Temperature'].diff(periods=600))
+        axs[1][3].plot(df['timestamp'], df['Temperature'].diff(periods=60))
+        axs[1][3].set_title("Change in temperature\nTimestamp vs 10, 5, 1 minute ago\nOrange = 10m, blue = 5m, green = 1m")
         axs[1][3].axhline(0, color="orange", linestyle="dotted")
 
         axs[2][0].scatter( df['timestamp'], df['X Magnetic Field'])
