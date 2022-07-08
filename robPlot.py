@@ -1,4 +1,6 @@
 from doctest import DocFileTest
+import os
+from turtle import clear
 import serial
 import sys
 from decoder import *
@@ -7,6 +9,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from geopy.geocoders import Nominatim
 from PIL import Image
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 today = date.today().strftime("%m|%d|%y")
 #SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 geolocator = Nominatim(user_agent="smartfin")
@@ -17,6 +21,7 @@ geolocator = Nominatim(user_agent="smartfin")
 # For example, $ python3 DataGetter.py /dev/ttyACM0
 
 def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
+    
     pdArray = []
     brokenLines = 0
     totalLines = 0
@@ -86,7 +91,7 @@ def plotData(files):
         axs[0][3].plot(df['timestamp'], df['settledTemps'], color = "orange")
         axs[0][3].axhline(df['settledTemps'].median(), color="orange", linestyle="dotted")
         #sets to limits of realistic ocean temps
-        #axs[0][3].set_ylim(10,40) 
+        axs[0][3].set_ylim(10,40) 
 
         axs[0][3].set_title("temperature vs timestamp\nMedian: " + str(round(df['Temperature'].mean(),2)) + " degrees C")
 
@@ -132,12 +137,49 @@ def plotData(files):
         plt.savefig("session_data" + str(plotCount) + ".png")
         plt.close()
         plotCount+=1
+
+os.system('clear')
+
+print("""
+   _____                          _    ______  _        
+  / ____|                        | |  |  ____|(_)       
+ | (___   _ __ ___    __ _  _ __ | |_ | |__    _  _ __  
+  \___ \ | '_ ` _ \  / _` || '__|| __||  __|  | || '_ \ 
+  ____) || | | | | || (_| || |   | |_ | |     | || | | |
+ |_____/ |_| |_| |_| \__,_||_|    \__||_|     |_||_| |_|
+                    -.--.
+                   )  " '-,
+                   ',' 2  \_
+                    \q \ .  |
+                 _.--'  '----.__
+                /  ._      _.__ \__
+             _.'_.'  \_ .-._\_ '-, }
+            (,/ _.---;-(  . \ \   ~
+          ____ (  .___\_\  \/_/
+         (      '-._ \   \ |
+          '._       ),> _) >
+             '-._  c=        -._
+                 '-._           '.
+                     '-._         `_
+                         '-._       '.
+                             '-._     |
+                                 `~---'
+            
+                Begin session now!
+    Press enter once session is complete and uploaded...
+""")
+
+input1 = input()
+
+print("LOADING...", end="")
         
 decodedData = decodeFromFile(today + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 oceanTemp = 0
 plotData(decodedData)
 
-print("\n\n\n\n Success! Plotted at 'session_data0.png'")
+os.system('clear')
+
+print("\nSuccess! Plotted at 'session_data0.png'\nOpening now...")
 
 # open method used to open different extension image file
 im = Image.open("session_data0.png")  
