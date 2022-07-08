@@ -73,7 +73,7 @@ def plotData(files):
         df.to_csv("session_data.csv")
         fig, axs = plt.subplots(3,4,figsize=(20,20))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
-        axs[0][0].set_title("Lat, Long: " + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + "\nProccessed on " + today + "\nSea Temperature: " + str(round(df['settledTemps'].median(),2)) + " degrees C\n" + str(int(df['lostPackets'].median())) + " of " +  str(int(df['totalPackets'].median())) + " total packets corrupted and proccessed out initially (" + str(round((df['lostPackets'].median()/df['totalPackets'].median())*100,2))+ "%)" + "\n" + str(int(df['lostTimestamps'].median())) + " of " + str(int(df['timestampsBeforeLoss'].median())) + " timestamps corrupted and proccessed out later (" + str(round((df['lostTimestamps'].median()/df['timestampsBeforeLoss'].median())*100,2))+ "%)\nTotal data loss of " + str(round(((df['lostPackets'].median()+(df['lostTimestamps'].median()/10))/df['totalPackets'].median())*100,2))+  "%\n(Note that 1 packet contains 10 timestamps of data)\n\nX acc vs timestamp") 
+        axs[0][0].set_title(str(nameOfSession) + "\nLat, Long: " + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + "\nProccessed on " + today + "\nSea Temperature: " + str(round(df['settledTemps'].median(),2)) + " degrees C\n" + str(int(df['lostPackets'].median())) + " of " +  str(int(df['totalPackets'].median())) + " total packets corrupted and proccessed out initially (" + str(round((df['lostPackets'].median()/df['totalPackets'].median())*100,2))+ "%)" + "\n" + str(int(df['lostTimestamps'].median())) + " of " + str(int(df['timestampsBeforeLoss'].median())) + " timestamps corrupted and proccessed out later (" + str(round((df['lostTimestamps'].median()/df['timestampsBeforeLoss'].median())*100,2))+ "%)\nTotal data loss of " + str(round(((df['lostPackets'].median()+(df['lostTimestamps'].median()/10))/df['totalPackets'].median())*100,2))+  "%\n(Note that 1 packet contains 10 timestamps of data)\nX acc vs timestamp") 
         axs[0][0].set_ylim(-3,3)
         axs[0][0].axhline(0, color="orange", linestyle="dotted")
         axs[0][0].axhline(1, color="orange", linestyle="dotted", label = '1g')
@@ -165,11 +165,13 @@ print("""
                              '-._     |
                                  `~---'
             
-                Begin session now!
-    Press enter once session is complete and uploaded...
-""")
+                     Begin session now!
 
-input1 = input()
+Name session and press enter once session is complete and uploaded...
+
+Name:""", end="")
+
+nameOfSession = input()
 
 print("LOADING...", end="")
         
