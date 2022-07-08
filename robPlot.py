@@ -6,6 +6,7 @@ from datetime import date
 import pandas as pd
 from matplotlib import pyplot as plt
 from geopy.geocoders import Nominatim
+from PIL import Image
 today = date.today().strftime("%m|%d|%y")
 #SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 geolocator = Nominatim(user_agent="smartfin")
@@ -32,31 +33,33 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
                     pdArray.append(df)
             except:
                 brokenLines = brokenLines + 1
-
-    dfFull = pdArray[0].sort_values(by=['timestamp'])
-    mean = dfFull["timestamp"].mean()
+    try:
+        dfFull = pdArray[0].sort_values(by=['timestamp'])
+        mean = dfFull["timestamp"].mean()
+        
+        dfFull['lostPackets'] = brokenLines
+        dfFull['totalPackets'] = totalLines
+        # for every row, delete it if the timestamp is > 2x the mean (plus some buffer).
+        aSize = dfFull['timestamp'].size
+        dfFull = dfFull[dfFull['timestamp'] < (2*mean + 10)] 
+        bSize = dfFull['timestamp'].size
+        lostTimeStamps = aSize - bSize
+        dfFull['lostTimestamps'] = lostTimeStamps
+        dfFull['timestampsBeforeLoss'] = aSize
     
-    dfFull['lostPackets'] = brokenLines
-    dfFull['totalPackets'] = totalLines
-    # for every row, delete it if the timestamp is > 2x the mean (plus some buffer).
-    aSize = dfFull['timestamp'].size
-    dfFull = dfFull[dfFull['timestamp'] < (2*mean + 10)] 
-    bSize = dfFull['timestamp'].size
-    lostTimeStamps = aSize - bSize
-    dfFull['lostTimestamps'] = lostTimeStamps
-    dfFull['timestampsBeforeLoss'] = aSize
-   
-    
-    dfFull['DTemp'] = dfFull['Temperature'].diff(periods=300)
-    #if the temperature hasnt changed much the last 6 mins
-    dfFull['isSettled'] = dfFull['DTemp'].abs() < 0.2
-    
-    temporary = (dfFull['isSettled']) * dfFull['Temperature']
-    dfFull['settledTemps'] = temporary
-    dfFull['settledTemps'] = dfFull['settledTemps'].replace({'0':np.nan, 0:np.nan})
+        
+        dfFull['DTemp'] = dfFull['Temperature'].diff(periods=300)
+        #if the temperature hasnt changed much the last 6 mins
+        dfFull['isSettled'] = dfFull['DTemp'].abs() < 0.2
+        
+        temporary = (dfFull['isSettled']) * dfFull['Temperature']
+        dfFull['settledTemps'] = temporary
+        dfFull['settledTemps'] = dfFull['settledTemps'].replace({'0':np.nan, 0:np.nan})
 
-    pdArray[0] = dfFull
+        pdArray[0] = dfFull
 
+    except:
+        print('AN ERROR OCCURED WITH DECODING')
     return pdArray
 
 def plotData(files):
@@ -134,3 +137,7 @@ plotData(decodedData)
 
 print("\n\n\n\n Success! Plotted at 'session_data0.png'")
 
+# open method used to open different extension image file
+im = Image.open("session_data0.png")  
+# This method will show image in any image viewer 
+im.show() 
