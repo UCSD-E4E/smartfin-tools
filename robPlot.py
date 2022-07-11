@@ -206,7 +206,7 @@ def plotData(files):
 def saveDataFromSheet():
     #dfSheet = dataEndpoint
 
-    dfSFR = open("_" + str(startTime) + "-data.sfr", "w") #Save each session as a new line in sfr file
+    dfSFR = open(today + "session-data.sfr", "w") #Save each session as a new line in sfr file
     df = pd.read_json('jsonofhook.json')
 
     for i in range(len(df['published_at'])):
@@ -253,7 +253,7 @@ def saveDataFromSerial():
         
         ser.write(('R\r').encode())
 
-    df = open("_" + str(startTime) + "-data.sfr", "w") #Save each session as a new line in sfr file
+    df = open(today + "session-data.sfr", "w") #Save each session as a new line in sfr file
 
     for i in range(len(dataToBeDecoded)):
         df.write(dataToBeDecoded[i][:-1] + "\n")
@@ -313,7 +313,7 @@ if(ans == "S"):
     saveDataFromSerial()
 
 #decode and plot the data
-decodedData = decodeFromFile("_" + str(startTime) + "-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+decodedData = decodeFromFile(today + "session-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
 plotData(decodedData)
 #os.system('clear')
 print("\nSuccess! Plotted in session_data.png\nOpening now...")
