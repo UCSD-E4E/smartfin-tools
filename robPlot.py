@@ -204,14 +204,19 @@ def plotData(files):
         plotCount+=1
 
 def saveDataFromSheet():
-    #dfSheet = dataEndpoint
+
+    df = getData('credentials.json')    
+    
+    print(df)
+
+    test = input()
 
     dfSFR = open(today + "session-data.sfr", "w") #Save each session as a new line in sfr file
-    df = pd.read_json('jsonofhook.json')
 
     for i in range(len(df['published_at'])):
         if(df['published_at'][i] > startTime):
             dfSFR.write(df['data'][i] + "\n")
+    
     dfSFR.close()
 
 def saveDataFromSerial():
