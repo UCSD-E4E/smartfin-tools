@@ -1,11 +1,12 @@
-from doctest import DocFileTest
-import serial
 import sys
-from decoder import *
 from datetime import date
-import pandas as pd
-from matplotlib import pyplot as plt
 from time import sleep
+
+import pandas as pd
+import serial
+from matplotlib import pyplot as plt
+
+from smartfin.decoder import *
 
 CLI_WAIT = 2
 
