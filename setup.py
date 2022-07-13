@@ -7,6 +7,13 @@ setup(
     install_requires=[
         'pandas',
         'numpy',
+        "pyserial",
+        'matplotlib',
     ],
+    entry_points={
+        'console_scripts': [
+            'smartfinDownloader = smartfin.smartfinDownloader:main'
+        ]
+    },
     packages=find_packages()
 )
