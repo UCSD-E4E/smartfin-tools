@@ -1,3 +1,4 @@
+from pickle import TRUE
 import struct
 import base64
 from typing import List
@@ -117,7 +118,9 @@ def convertToSI(df:pd.DataFrame):
     waterDetect = list(df['Temperature'])
     for i in range(len(waterDetect)):
         if not np.isnan(waterDetect[i]):
-            waterDetect[i] = (waterDetect[i] >= 0)
+            if (waterDetect[i] >= 100):
+                waterDetect[i] = TRUE
+                df['Temperature'][i] = df['Temperature'][i] - 100
     df['Water Detect'] = waterDetect
     if 'xAcc' in df.columns:
         df['X Acceleration'] = df['xAcc'] / 16384

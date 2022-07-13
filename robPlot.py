@@ -108,7 +108,7 @@ def plotData(files):
             print("Locate not available.")
             
 
-        fig, axs = plt.subplots(3,4,figsize=(25,28))
+        fig, axs = plt.subplots(4,4,figsize=(25,28))
 
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
         axs[0][0].set_title(str(nameOfSession) + "\nLocation: " + (location if location else "unknown") + "\n(" + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + ")\n" + "\nProccessed on " + today + "\nSea Temperature: " + str(round(df['settledTemps'].median(),2)) + " degrees C\n" + str((df['lostPackets'].median())) + " of " +  str((df['totalPackets'].median())) + " total packets corrupted and proccessed out initially (" + str(round((df['lostPackets'].median()/df['totalPackets'].median())*100,2))+ "%)" + "\n" + str((df['lostTimestamps'].median())) + " of " + str((df['timestampsBeforeLoss'].median())) + " timestamps corrupted and proccessed out later (" + str(round((df['lostTimestamps'].median()/df['timestampsBeforeLoss'].median())*100,2))+ "%)\nTotal data loss of " + str(round(((df['lostPackets'].median()+(df['lostTimestamps'].median()/10))/df['totalPackets'].median())*100,2))+  "% (1 packet = 10 timestamps of data)\n\nX acc vs timestamp") 
@@ -169,6 +169,9 @@ def plotData(files):
         #axs[2][3].set_xlim(df['timestamp'].min(), df['timestamp'].max())
         #axs[2][3].set_ylim(df['Temperature'].min(), df['Temperature'].max())
 
+
+        #axs[3][0].scatter( df['timestamp'], df['Water Detect'])
+        #axs[3][0].set_title("water detect vs time")
 
         #follwing code is to be able to graph cardinal direction eventually. 
         #make sure to change '.subplots(3,4,fi' to '.subplots(4,4,fi'
