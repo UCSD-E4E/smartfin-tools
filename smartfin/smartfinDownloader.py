@@ -9,15 +9,7 @@ from time import sleep
 
 CLI_WAIT = 2
 
-today = date.today().strftime("%m_%d_%y")
-SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
-# For example, $ python3 DataGetter.py /dev/ttyACM0
-
-raw_data_fp = "./{date}_raw_data.sfr"
-csv_data_fp = "./{date}_session{session_num}.csv"
-plot_data_fp = "./{date}_session{session_num}_plt.png"
-
-def saveRawData(fp):
+def saveRawData(fp, SerialPort: str):
     ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
     dataToBeDecoded = []
 
@@ -59,7 +51,7 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
 
     return pdArray
 
-def plotData(files):
+def plotData(files, plot_data_fp:str, today:str):
     for i, df in enumerate(files):
         fig, axs = plt.subplots(3,4,figsize=(15,15))
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
@@ -100,14 +92,24 @@ def plotData(files):
         plt.savefig(plot_data_fp.format(date=today, session_num=i))
         plt.close()
 
-def save_to_csv(decodedData):
+def save_to_csv(decodedData, csv_data_fp: str, today: str):
     for i, df in enumerate(decodedData):
         df.to_csv(csv_data_fp.format(date=today, session_num=i), sep=",")
 
-if __name__ == "__main__":
-    raw_data_fp_today = raw_data_fp.format(date=today)
-    saveRawData(raw_data_fp_today)
-    decodedData = decodeFromFile(raw_data_fp_today) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
-    save_to_csv(decodedData)
-    plotData(decodedData)
+def main():
+    today = date.today().strftime("%m_%d_%y")
+    SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
+    # For example, $ python3 DataGetter.py /dev/ttyACM0
 
+    raw_data_fp = "./{date}_raw_data.sfr"
+    csv_data_fp = "./{date}_session{session_num}.csv"
+    plot_data_fp = "./{date}_session{session_num}_plt.png"
+
+    raw_data_fp_today = raw_data_fp.format(date=today)
+    saveRawData(raw_data_fp_today, SerialPort=SerialPort)
+    decodedData = decodeFromFile(raw_data_fp_today) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+    save_to_csv(decodedData, csv_data_fp=csv_data_fp, today=today)
+    plotData(decodedData, plot_data_fp=plot_data_fp, today=today)
+
+if __name__ == "__main__":
+    main()
