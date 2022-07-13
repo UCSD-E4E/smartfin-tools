@@ -13,18 +13,12 @@ def saveDataFromSerial():
     fileName = ""
     j = 0
 
-    sleep(2)
-    #this block makes sure its where we want it (to not be in CLI mode)
-    #so that when we go into CLI mode its at the start of it
-    for i in range(10):
-        ser.write(('N\r').encode())
-    ser.write(('D\r').encode())
+    sleep(1)
 
-    sleep(0.1)
-
+    print("OPENING CLI")
     ser.write(('#CLI\r').encode()) #Access CLI through terminal
 
-    sleep(0.5)
+    sleep(1)
 
     ser.write(('R\r').encode())
             
@@ -32,14 +26,14 @@ def saveDataFromSerial():
 
     while True:
         data = ser.readline().decode()
-
-        print(data + "\n")
-
+        print(data)
         if('Publish Header:' in data):
             fileName = data[16:-1]
+            print("FILENAME: " + fileName)
 
         if('{' in data):
             dataToBeDecoded.append(data)
+            print(data, end = "")
 
         if('packets' in data):
             df = open(fileName + "-session-data.sfr", "w") #Save each session as a new line in sfr file
@@ -49,14 +43,17 @@ def saveDataFromSerial():
             df.close()
             ser.write(('N\r').encode())
             ser.write(('R\r').encode())
+            print("ENCODED N, R")
         
         
         if(data == "End of Directory\n"): #Continue reading and appending decoded files to array until end of directory
-            ser.write(('D\r').encode()) #exits CLI
-            print("End of data.")
+            sleep(0.5)
+            print("\n")
+            print("End of data. Restart with magnet")
             break
 
 print("Saving Data From Serial...")
 saveDataFromSerial()
+
 
 

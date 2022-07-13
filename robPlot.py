@@ -310,7 +310,7 @@ Name:""", end="")
 #Get name from user
 nameOfSession = ""
 nameOfSession = input()
-print("Data from online cloud (C), Serial (S), or file (F, default): ", end="")
+print("Data from online cloud (C), Serial (S), or file (default or put path): ", end="")
 ans = ""
 ans = input()
 
@@ -320,8 +320,11 @@ if(ans == "C"):
 if(ans == "S"):
     saveDataFromSerial()
 
-#decode and plot the data
-decodedData = decodeFromFile(today + "session-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+if(ans == ""):
+    decodedData = decodeFromFile(today + "session-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+else:
+    decodedData = decodeFromFile(ans) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+
 plotData(decodedData)
 #os.system('clear')
 print("\nSuccess! Plotted in session_data.png\nOpening now...")
