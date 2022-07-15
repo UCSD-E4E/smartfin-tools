@@ -8,12 +8,13 @@ import pandas as pd
 import smartfin.decoder as scd
 
 
-def sfrToSfp(in_sfr: Path, out_sfp: Path):
+def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False):
     with open(in_sfr, 'r') as sfr:
         with open(out_sfp, 'wb') as sfp:
             for record in sfr:
                 packet = b85decode(record.strip())
-                packet = scd.stripPadding(packet)
+                if not no_strip_padding:
+                    packet = scd.stripPadding(packet)
                 sfp.write(packet)
 
 def sfrToCsv(in_sfr: Path, out_csv: Path):
@@ -42,6 +43,7 @@ def main():
     parser.add_argument('--input_type', default=None, nargs=1, choices=['sfr', 'sfp'])
     parser.add_argument('output')
     parser.add_argument('--output_type', default=None, nargs=1, choices=['sfp', 'csv'])
+    parser.add_argument('--no_strip_padding', action='store_true')
 
     args = parser.parse_args()
     input_file = Path(args.input)
@@ -73,7 +75,7 @@ def main():
         shutil.copy(input_file, output_file)
     
     if input_type == 'sfr' and output_type == 'sfp':
-        sfrToSfp(input_file, output_file)
+        sfrToSfp(input_file, output_file, no_strip_padding=args.no_strip_padding)
     elif input_type == 'sfp' and output_type == 'csv':
         sfpToCsv(input_file, output_file)
     elif input_type == 'sfr' and output_type == 'csv':
