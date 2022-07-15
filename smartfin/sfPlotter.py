@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from pathlib import Path
 import smartfin.decoder
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import os
 import glob
 import argparse
 
-def plotFile(fileName:str)->str:
+def plotFile(fileName:str, output_dir:str)->str:
     ensembles = []
     with open(fileName, 'r') as dataFile:
         for line in dataFile:
@@ -17,7 +18,7 @@ def plotFile(fileName:str)->str:
     df = pd.DataFrame(ensembles)
     df = smartfin.decoder.convertToSI(df)
     
-    outputDir = os.path.splitext(fileName)[0]
+    outputDir = Path(output_dir, os.path.splitext(fileName)[0]).as_posix()
     if not os.path.exists(outputDir):
         os.mkdir(outputDir)
 
@@ -138,7 +139,9 @@ def plotFile(fileName:str)->str:
 def main():
     parser = argparse.ArgumentParser("Smartfin Data Plotter")
     parser.add_argument('sfr_file', default=None, nargs='?')
+    parser.add_argument('output', default='.', nargs='?')
     args = parser.parse_args()
+    output_dir = args.output
     if args.sfr_file:
         path = args.sfr_file
     else:
@@ -149,7 +152,7 @@ def main():
         print("Not a file!")
         return
     print("Graphing %s" % path)
-    plotFile(path)
+    plotFile(path, output_dir)
 
 if __name__ == "__main__":
     main()
