@@ -1,13 +1,16 @@
 from time import sleep
+from numpy import number
 import pandas as pd
 import serial
 import sys
 
 SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
-
+ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
+numberOfSessions = 0
 
 def saveDataFromSerial():
-    ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
+    numberOfSessions = 0
+    
 
     dataToBeDecoded = []
     fileName = ""
@@ -21,15 +24,18 @@ def saveDataFromSerial():
     sleep(1)
 
     ser.write(('R\r').encode())
-            
+    
+    sleep(1)
+
     ser.write(('R\r').encode())
+
 
     while True:
         data = ser.readline().decode()
-        print(data)
         if('Publish Header:' in data):
             fileName = data[16:-1]
             print("FILENAME: " + fileName)
+            
 
         if('{' in data):
             dataToBeDecoded.append(data)
@@ -39,21 +45,40 @@ def saveDataFromSerial():
             df = open(fileName + "-session-data.sfr", "w") #Save each session as a new line in sfr file
             for i in range(len(dataToBeDecoded)):
                 df.write(dataToBeDecoded[i][:-1] + "\n")
+            numberOfSessions = numberOfSessions + 1
 
             df.close()
+            dataToBeDecoded = []
             ser.write(('N\r').encode())
             ser.write(('R\r').encode())
-            print("ENCODED N, R")
+            print("GOING TO NEXT SESSION...")
+            sleep(1)
         
         
-        if(data == "End of Directory\n"): #Continue reading and appending decoded files to array until end of directory
-            sleep(0.5)
-            print("\n")
-            print("End of data. Restart with magnet")
+        if(data == "End of Directory\n"): 
+            print("Delete all files? Y/N")
+            answer = input()     
+            
+
+            
+            sleep(1)
+            for i in range(numberOfSessions):
+                if(answer == "Y"):
+                    ser.write(('D\r').encode())
+                ser.write(('N\r').encode())
+            sleep(1)
+            ser.write(('D\r').encode())
+            sleep(1)
+            print(data)
             break
+
+            
 
 print("Saving Data From Serial...")
 saveDataFromSerial()
+
+
+
 
 
 

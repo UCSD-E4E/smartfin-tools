@@ -35,3 +35,11 @@ how to use the sheet getter (cloud)
 1) do not use it yet
 
 
+HOW TO JUST DOWNLOAD THE DATA (NOT DECODE)
+
+1) use command
+
+python3 serialPort.py /dev/tty.usbmodem*
+
+and follow prompts. files will be saved to the save directory
+

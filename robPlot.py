@@ -310,7 +310,7 @@ Name:""", end="")
 #Get name from user
 nameOfSession = ""
 nameOfSession = input()
-print("Data from online cloud (C), Serial (S), or file (default or put path): ", end="")
+print("Data from online cloud (C) or file (default or put path). Use serialPort.py for serial download: ", end="")
 ans = ""
 ans = input()
 
