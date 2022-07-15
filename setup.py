@@ -14,6 +14,7 @@ setup(
         'console_scripts': [
             'smartfinDownloader = smartfin.smartfinDownloader:main',
             'sfDownloader = smartfin.sfDownloader:main',
+            'sfPlotter = smartfin.sfPlotter:main',
         ]
     },
     packages=find_packages()

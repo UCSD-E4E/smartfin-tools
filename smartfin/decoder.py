@@ -102,7 +102,8 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             ensemble['dataType'] = dataType
             packetList.append(ensemble)
         elif dataType == 0:
-            logger.warning("Unknown data type: 0")
+            # logger.warning("Unknown data type: 0")
+            # Padding
             continue
         elif dataType == 0x0F:
             # text
