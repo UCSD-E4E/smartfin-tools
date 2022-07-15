@@ -12,7 +12,8 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'smartfinDownloader = smartfin.smartfinDownloader:main'
+            'smartfinDownloader = smartfin.smartfinDownloader:main',
+            'sfDownloader = smartfin.sfDownloader:main',
         ]
     },
     packages=find_packages()
