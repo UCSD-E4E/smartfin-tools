@@ -72,6 +72,39 @@ __parserTable = {
     }
 }
 
+def stripPadding(packet: bytes) -> bytes:
+    logger = logging.getLogger("Smartfin Decoder")
+    strippedData = b''
+    idx = 0
+    start_idx = 0
+    while idx < len(packet):
+        if len(packet) - idx < 3:
+            break
+        dataTimeByte = packet[idx]
+        idx += 1
+        timeMSB: int = struct.unpack("<H", packet[idx:idx + 2])[0]
+        idx += 2
+        time_ds = ((dataTimeByte & 0xF0) >> 4) | (timeMSB << 4)
+        dataType = dataTimeByte & 0x0F
+        if dataType in __parserTable:
+            # can use from parser table
+            parseParams = __parserTable[dataType]
+            idx += parseParams['len']
+        elif dataType == 0:
+            # Padding
+            # logger.warning(f"Unknown data type: 0 at index {idx}")
+            strippedData += packet[start_idx:idx-3]
+            idx -= 2
+            start_idx = idx
+            continue
+        elif dataType == 0x0F:
+            # text
+            textLen = packet[idx]
+            idx += 1
+            idx += textLen
+        else:
+            logger.warning(f'Unknown data type: {dataType}')
+    return strippedData
 
 def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
     logger = logging.getLogger("Smartfin Decoder")

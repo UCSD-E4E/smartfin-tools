@@ -12,7 +12,9 @@ def sfrToSfp(in_sfr: Path, out_sfp: Path):
     with open(in_sfr, 'r') as sfr:
         with open(out_sfp, 'wb') as sfp:
             for record in sfr:
-                sfp.write(b85decode(record.strip()))
+                packet = b85decode(record.strip())
+                packet = scd.stripPadding(packet)
+                sfp.write(packet)
 
 def sfrToCsv(in_sfr: Path, out_csv: Path):
     ensembles = []

@@ -10,7 +10,9 @@
             "request": "launch",
             "module": "smartfin.sfDownloader",
             "justMyCode": true,
-            "args": ["COM4"]
+            "args": [
+                "COM4"
+            ]
         },
         {
             "name": "SF Downloader - COM4/Delete",
@@ -18,7 +20,10 @@
             "request": "launch",
             "module": "smartfin.sfDownloader",
             "justMyCode": true,
-            "args": ["COM4", "--delete"]
+            "args": [
+                "COM4",
+                "--delete"
+            ]
         }
     ]
 }
