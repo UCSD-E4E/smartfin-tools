@@ -15,6 +15,7 @@ setup(
             'smartfinDownloader = smartfin.smartfinDownloader:main',
             'sfDownloader = smartfin.sfDownloader:main',
             'sfPlotter = smartfin.sfPlotter:main',
+            'sfConvert = smartfin.sfConvert:main',
         ]
     },
     packages=find_packages()
