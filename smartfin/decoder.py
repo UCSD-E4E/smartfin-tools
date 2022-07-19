@@ -10,7 +10,9 @@ def decodeRecord(record: str) -> List[Dict[str, Union[int, float]]]:
     logger = logging.getLogger("Smartfin Decoder")
     if len(record) % 5 != 0:
         logger.warning("Record does not contain a multiple of 5 characters!")
+        print("warning: Record does not contain a multiple of 5 characters!")
     packet = base64.b85decode(record)
+    #returns the packet and record in base64, then we decode the packet
     return decodePacket(packet)
 
 
@@ -85,7 +87,7 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
         timeMSB: int = struct.unpack("<H", packet[idx:idx + 2])[0]
         idx += 2
         time_ds = ((dataTimeByte & 0xF0) >> 4) | (timeMSB << 4)
-        timestamp = time_ds / 10.
+        timestamp = time_ds / 10.0
         dataType = dataTimeByte & 0x0F
         if dataType in __parserTable:
             # can use from parser table

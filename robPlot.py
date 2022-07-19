@@ -277,40 +277,14 @@ def openAndShowImage():
 
 #Actual proccess to run:
 os.system('clear')
-print("""
-   _____                          _    ______  _        
-  / ____|                        | |  |  ____|(_)       
- | (___   _ __ ___    __ _  _ __ | |_ | |__    _  _ __  
-  \___ \ | '_ ` _ \  / _` || '__|| __||  __|  | || '_ \ 
-  ____) || | | | | || (_| || |   | |_ | |     | || | | |
- |_____/ |_| |_| |_| \__,_||_|    \__||_|     |_||_| |_|
-                    -.--.
-                   )  " '-,
-                   ',' 2  \_
-                    \q \ .  |
-                 _.--'  '----.__
-                /  ._      _.__ \__
-             _.'_.'  \_ .-._\_ '-, }
-            (,/ _.---;-(  . \ \   ~
-          ____ (  .___\_\  \/_/
-         (      '-._ \   \ |
-          '._       ),> _) >
-             '-._  c=        -._
-                 '-._           '.
-                     '-._         `_
-                         '-._       '.
-                             '-._     |
-                                 `~---'
-            
-                     Begin session now!
-                  """+str(startTime)+"""
-Name session and press enter once session is complete and uploaded...
 
-Name:""", end="")
+print("""Name graph: """, end="")
+
 #Get name from user
 nameOfSession = ""
 nameOfSession = input()
-print("Data from online cloud (C) or file (default or put path). Use serialPort.py for serial download: ", end="")
+print("Use serialPort.py to download files.")
+print("Input relative file path (file name) to plot: ", end="")
 ans = ""
 ans = input()
 

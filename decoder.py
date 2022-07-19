@@ -5,9 +5,6 @@ from typing import List
 import pandas as pd
 import numpy as np
 
-LINEAR_REGRESSION_A = 1.0/126.75
-LINEAR_REGRESSION_B = 0.205
-
 
 def decodeRecord(record:str)->List:
     packet = base64.b85decode(record)
@@ -114,7 +111,7 @@ def decodePacket(packet:bytes)->List:
 
 
 def convertToSI(df:pd.DataFrame):
-    df['Temperature'] = df['temp+water']*LINEAR_REGRESSION_A + LINEAR_REGRESSION_B
+    df['Temperature'] = df['temp+water']/ 333.87 + 21.0
     waterDetect = list(df['Temperature'])
     for i in range(len(waterDetect)):
         if not np.isnan(waterDetect[i]):
