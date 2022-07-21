@@ -4,14 +4,13 @@ from datetime import date
 import time
 import pandas as pd
 
-today = date.today().strftime("%m|%d|%y")
-SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
-#For example, $ python3 DataGetter.py /dev/ttyACM0
-today = date.today().strftime("%m|%d|%y")
-startTime = time.time()
+
 
 
 def saveRawData():
+    SerialPort = str(sys.argv[1])  # Enter your fin serial port name as a command line argument
+    # For example, $ python3 DataGetter.py /dev/ttyACM0
+    startTime = time.time()
     ser = serial.Serial(port=SerialPort, baudrate=115200, timeout=None)
 
     monitorData = []
@@ -51,11 +50,20 @@ def saveRawData():
 
 
 def csvToPd():
-    df = pd.read_csv('1658269077.csv')
-    print(df)
+    # first get all lines from file
+    with open('test.csv', 'r') as f:
+        lines = f.readlines()
 
-    print(df['    xMag'].astype(str) + ',' + df['    yMag'].astype(str) + ',' + df['    yMag'].astype(str))
+    # remove spaces
+    lines = [line.replace(' ', '') for line in lines]
 
-saveRawData()
+    # finally, write lines in the file
+    with open('test.csv', 'w') as f:
+        f.writelines(lines[1:])  #[1:] removes title
+    #print(df)
 
-#csvToPd()
+    #print(df['    xMag'].astype(str) + ',' + df['    yMag'].astype(str) + ',' + df['    yMag'].astype(str))
+
+#saveRawData()
+
+csvToPd()
