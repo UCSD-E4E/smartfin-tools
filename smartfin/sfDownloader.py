@@ -3,27 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import serial
 
-def discoverAndReset(port:serial.Serial):
-    port.flush()
-    port.write('\r'.encode())
-    port.timeout = 1
-    data = port.readline()
-    try:
-        line = data.decode()
-    except:
-        pass
-    if line == "Unknown command\n":
-        # We are in CLI or text edit, switch back to deep sleep
-        data = port.readline()
-        if data.decode() == '>':
-            port.write("D\r".encode())
-        elif data.decode() == ':>\r\n':
-            port.write('E\r'.encode())
-            port.write("D\r".encode())
-    elif line == 'T for MFG Test, C for C for Calibrate Mode, B for Battery State,\n':
-        port.write('D\r'.encode())
-    else:
-        raise RuntimeError("Unknown state")
+from cli_util import drop_into_cli
 
 def main():
     parser = ArgumentParser()
@@ -70,7 +50,7 @@ def download_data(delete: bool, port: serial.Serial, files: List[str]):
                 continue
             elif data == 'End of Directory\n':
                 break
-            elif data == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit\r\n':
+            elif data == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit\n':
                 continue
             elif data == '':
                 continue
@@ -80,6 +60,7 @@ def download_data(delete: bool, port: serial.Serial, files: List[str]):
             elif data == ':>':
                 break
             else:
+                port.write('X\r'.encode())
                 raise RuntimeError("Unknown state")
         if data == 'End of Directory\n':
             break
@@ -129,21 +110,6 @@ def get_files(port: serial.Serial):
             continue
         files.append(data.split()[0])
     return files
-
-def drop_into_cli(port: serial.Serial):
-    port.write("#CLI\r".encode())
-    data = port.readline()
-    if data.decode(errors="ignore") != "Next State: STATE_CLI\n":
-        discoverAndReset(port)
-        raise RuntimeError("Restart me please")
-        
-        # Wait for '>'
-    while True:
-        data = port.readline()
-        if data.decode(errors='ignore') == '':
-            raise RuntimeError("Unexpected no data!")
-        elif data.decode(errors='ignore') == '>':
-            break
 
 if __name__ == "__main__":
     main()
