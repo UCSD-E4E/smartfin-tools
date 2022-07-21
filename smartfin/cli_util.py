@@ -11,7 +11,7 @@ def drop_into_cli(port: serial.Serial):
     while True:
         data = port.readline()
         if data.decode(errors='ignore') == '':
-            raise RuntimeError("Unexpected no data!")
+            continue;
         elif data.decode(errors='ignore') == '>':
             break
             
