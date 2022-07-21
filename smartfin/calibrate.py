@@ -9,12 +9,6 @@ from cli_util import drop_into_cli
 
 import matplotlib.pyplot as plt
 
-today = date.today().strftime("%m|%d|%y")
-SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
-#For example, $ python3 DataGetter.py /dev/ttyACM0
-today = date.today().strftime("%m|%d|%y")
-startTime = time.time()
-
 DATA_COLUMNS = ["time", "xAcc", "yAcc", "zAcc", "xAng", "yAng", "zAng", "xMag", "yMag", "zMag", "temp", "water", "lat", "lon"]
 
 
