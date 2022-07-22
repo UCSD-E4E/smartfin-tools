@@ -33,6 +33,7 @@ class data_input_thread(threading.Thread):
 def monitor_sensors(port: serial.Serial, df_data, run_event):
     while run_event.is_set():
         try:
+            time.sleep(0.005)
             data = port.readline().decode(errors='ignore')
             parsed_data = np.fromstring(data, dtype=float, sep='\t')
 
@@ -94,6 +95,8 @@ def main():
 
     args = parser.parse_args()
     
+    output_dir = args.output_dir
+    
     run_event = threading.Event()
     run_event.set()
     
@@ -115,7 +118,9 @@ def main():
             print("Threads successfully closed")
     
     print(df_data)
-    #save_to_csv(df_data, ["xMag", "yMag", "zMag"], "data.csv")
+    
+    if output_dir:
+        save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
     
 if __name__ == "__main__":
     main()
