@@ -89,7 +89,7 @@ def plot_magnetometer_2D(df, title=None):
     plt.pause(0.001)
 
 def save_to_csv(df, fields, fp):
-    df.loc[:,fields].to_csv(fp, index=False)
+    df.loc[:,fields].to_csv(fp, index=False, header=False)
     
 def data_input_main(port_p):
     run_event = threading.Event()
@@ -130,7 +130,7 @@ def main():
     df_data = data_input_main(args.port)
     
     if output_dir:
-        save_to_csv(df_data[1:], ["xMag", "yMag", "zMag"], output_dir)
+        save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
     
 if __name__ == "__main__":
     main()
