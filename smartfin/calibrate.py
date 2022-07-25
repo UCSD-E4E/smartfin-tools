@@ -120,7 +120,7 @@ def main():
     print(df_data)
     
     if output_dir:
-        save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
+        save_to_csv(df_data[1:], ["xMag", "yMag", "zMag"], output_dir)
     
 if __name__ == "__main__":
     main()
