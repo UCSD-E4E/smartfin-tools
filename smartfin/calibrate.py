@@ -56,11 +56,12 @@ def exit_monitor_sensors(port):
 def real_time_plot(x, y):
     plt.scatter(x, y, c="blue")
     plt.pause(0.05)
-    
+
+def split_data(df, cols):
+    return tuple(df.loc[:,col] for col in cols)
+
 def plot_magnetometer_3D(df, title=None):
-    x = df.loc[:,"xMag"]
-    y = df.loc[:,"yMag"]
-    z = df.loc[:,"xMag"]
+    x, y, z = split_data(df, ["xMag", "yMag", "zMag"])
 
     ax = plt.axes(projection='3d')
 
@@ -73,20 +74,46 @@ def plot_magnetometer_3D(df, title=None):
 
     plt.pause(0.001)
 
-def plot_magnetometer(self, data, title=None):
-    x, y, z = self.split(data)
-    plt.plot(x, y, '.b', x, z, '.r', z, y, '.g')
+def plot_magnetometer_2D(df, title=None):
+    x, y, z = split_data(df, ["xMag", "yMag", "zMag"])
+
+    plt.scatter(x, y, '.b', label='xy')
+    plt.scatter(y, z, '.r', label='yz')
+    plt.scatter(z, x, '.g', label='zx')
     plt.xlabel('$\mu$T')
     plt.ylabel('$\mu$T')
     plt.grid(True)
     if title:
         plt.title(title)
-
-    plt.savefig(str(self.plot_count) + '.png')
-    self.plot_count += 1
+        
+    plt.pause(0.001)
 
 def save_to_csv(df, fields, fp):
-    df.loc[:,fields].to_csv(fp)
+    df.loc[:,fields].to_csv(fp, index=False)
+    
+def data_input_main(port_p):
+    run_event = threading.Event()
+    run_event.set()
+    
+    df_data = pd.DataFrame(columns=DATA_COLUMNS)
+    with serial.Serial(port=port_p, baudrate=115200) as port:
+        port.timeout = 1
+        data_thread = data_input_thread(1, port, run_event, df_data)
+        
+        data_thread.start()
+        try:
+            while True:
+                plot_magnetometer_3D(df_data)
+                time.sleep(.1)
+        except KeyboardInterrupt:
+            print("Closing threads")
+            run_event.clear()
+            data_thread.join()
+            print("Threads successfully closed")
+    
+    print(df_data)
+    return df_data
+    
 
 def main():
     parser = ArgumentParser()
@@ -100,24 +127,7 @@ def main():
     run_event = threading.Event()
     run_event.set()
     
-    df_data = pd.DataFrame(columns=DATA_COLUMNS)
-
-    with serial.Serial(port=args.port, baudrate=115200) as port:
-        port.timeout = 1
-        data_thread = data_input_thread(1, port, run_event, df_data)
-        
-        data_thread.start()
-        try:
-            while True:
-                plot_magnetometer_3D(df_data)
-                time.sleep(.1)
-        except:
-            print("Closing threads")
-            run_event.clear()
-            data_thread.join()
-            print("Threads successfully closed")
-    
-    print(df_data)
+    df_data = data_input_main(args.port)
     
     if output_dir:
         save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
