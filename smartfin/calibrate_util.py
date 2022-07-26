@@ -1,0 +1,159 @@
+import serial
+import sys
+from datetime import date
+import time
+import pandas as pd
+import numpy as np
+from argparse import ArgumentParser
+from cli_util import drop_into_cli
+
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import threading
+
+import logging
+logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=logging_fmt)
+
+DATA_COLUMNS = ["time", "xAcc", "yAcc", "zAcc", "xAng", "yAng", "zAng", "xMag", "yMag", "zMag", "temp", "water", "lat", "lon"]
+
+class data_input_thread(threading.Thread):
+    def __init__(self, threadID, port, run_event, df_data, period):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.port = port
+        self.run_event = run_event
+        self.df_data = df_data
+        self.period = period
+        
+        drop_into_cli(port) #drops into CLI mode
+        port.write(('*\r').encode()) #enters developer mode
+        port.write(('4\r').encode()) #executes monitor sensor
+
+    def run(self):
+        logging.info("Starting thread {}".format(self.threadID))
+        monitor_sensors(self.port, self.df_data, self.run_event, self.period)
+        logging.info("Exiting thread {}".format(self.threadID))
+        exit_monitor_sensors(self.port)
+
+def monitor_sensors(port: serial.Serial, df_data, run_event, period):
+    start_time = None
+    while run_event.is_set():
+        data = port.readline().decode(errors='ignore')
+        parsed_data = np.fromstring(data, dtype=float, sep='\t')
+
+        if (parsed_data.size == len(DATA_COLUMNS)):
+            if not start_time:
+                start_time = time.time()
+                logging.info(start_time)
+            elif period and time.time() - start_time >= period:
+                run_event.clear()
+                break
+
+            logging.debug(parsed_data)
+            df_data.loc[df_data.shape[0],:] = parsed_data
+
+def exit_monitor_sensors(port):
+    port.write(chr(27).encode()) #exits monitor sensors
+    while True:
+        data = port.readline().decode(errors='ignore')
+        if (data == "Exit complete\n"):
+            break
+        port.write('X\r'.encode()) #Exits CLI Mode
+
+def split_data(df, cols):
+    return [df.loc[:,col] for col in cols]
+
+def plot_magnetometer_3D(df, title=None):
+    x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
+
+    ax = plt.axes(projection='3d')
+
+    ax.plot(x, y, z, '.b')
+    ax.set_xlabel('$\mu$T')
+    ax.set_ylabel('$\mu$T')
+    ax.set_zlabel('$\mu$T')
+    if title:
+        plt.title(title)
+
+    plt.pause(0.001)
+
+def plot_magnetometer_2D(df, title=None):
+    x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
+
+    plt.scatter(x, y, '.b', label='xy')
+    plt.scatter(y, z, '.r', label='yz')
+    plt.scatter(z, x, '.g', label='zx')
+    plt.xlabel('$\mu$T')
+    plt.ylabel('$\mu$T')
+    plt.grid(True)
+    if title:
+        plt.title(title)
+        
+    plt.pause(0.001)
+
+def plot_time_series(df, cols, ylim=None, xlim = None, title=None):
+    data = split_data(df, ["time"] + cols)
+    fig, axis = plt.subplots(1, 3, figsize=(12,4))
+    
+    x = data[0]
+    Y = data[1:]
+    if len(x) != 0:
+        start_time = x[0]
+        for ax, y in zip(axis, Y):
+            ax.scatter(x-start_time, y)
+            if ylim:
+                ax.set_ylim(bottom=ylim[0], top=ylim[1])
+
+    plt.pause(0.001)
+    plt.close(fig)
+    
+def plot_accelerometer(df):
+    plot_time_series(df, ["xAcc", "yAcc", "zAcc"], ylim=(-2, 2))
+    
+def plot_gyroscope(df):
+    plot_time_series(df, ["xAng", "yAng", "zAng"])
+    
+def save_to_csv(df, fields, fp):
+    df.loc[:,fields].to_csv(fp, index=False, header=False)
+    
+def data_input_main(port_p, plotter, period=None):
+    run_event = threading.Event()
+    run_event.set()
+    
+    df_data = pd.DataFrame(columns=DATA_COLUMNS)
+    with serial.Serial(port=port_p, baudrate=115200) as port:
+        port.timeout = 1
+        data_thread = data_input_thread(1, port, run_event, df_data, period)
+        
+        data_thread.start()
+        try:
+            while run_event.is_set():
+                if plotter:
+                    plotter(df_data)
+                time.sleep(.1)
+        finally:
+            logging.info("Closing threads")
+            run_event.clear()
+            data_thread.join()
+            logging.info("Threads successfully closed")
+    
+    logging.debug(df_data)
+    return df_data
+    
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument("port")
+    parser.add_argument('--output_dir', '-o', default=None)
+
+    args = parser.parse_args()
+    
+    output_dir = args.output_dir
+    df_data = data_input_main(args.port, plot_gyroscope, 10)
+    
+    if output_dir:
+        save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
+    
+if __name__ == "__main__":
+    main()
