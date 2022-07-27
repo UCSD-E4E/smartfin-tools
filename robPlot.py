@@ -5,8 +5,6 @@ from traceback import print_last
 from tracemalloc import start
 from turtle import clear
 from pytz import utc
-import serial
-import sys
 from decoder import *
 from dataEndpoint import *
 from datetime import date
@@ -18,12 +16,20 @@ from geopy.geocoders import Nominatim
 from PIL import Image
 import warnings
 import requests
-import dataEndpoint
+import scipy.integrate as integrate
+import scipy.special as special
+from scipy.fft import fft, fftfreq, fftshift
+from scipy import signal
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=TypeError)
 
+#This code is used to plot data given an SFR file of raw data
+#RUN WITH
+#>python3 robPlot.py
+
 today = date.today().strftime("%m|%d|%y")
-SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
+#SerialPort = str(sys.argv[1]) #Enter your fin serial port name as a command line argument
 geolocator = Nominatim(user_agent="smartfin")
 startTime = pd.Timestamp.utcnow()
 oceanTemp = 0
@@ -31,7 +37,7 @@ oceanTemp = 0
 #240 is based on:
 #https://docs.google.com/document/d/1HU__vjj-X4UscdWC5Q2WnbwtDiQQfpvlOIGNSovF1gc/edit
 TIME_NEEDED_TO_SETTLE = 240 #in seconds
-DEGREE_CHANGE_C_CONSIDERED_SETTLED = 0.2 #in degrees C
+DEGREE_CHANGE_C_CONSIDERED_SETTLED = 0.1 #in degrees C
 
 
 # For example, $ python3 DataGetter.py /dev/ttyACM0
@@ -108,7 +114,7 @@ def plotData(files):
             print("Locate not available.")
             
 
-        fig, axs = plt.subplots(4,4,figsize=(25,28))
+        fig, axs = plt.subplots(6,4,figsize=(25,28))
 
         axs[0][0].plot(df['timestamp'], df['X Acceleration'])
         axs[0][0].set_title(str(nameOfSession) + "\nLocation: " + (location if location else "unknown") + "\n(" + str(df['Latitude'].mean()) + ", " + str(df['Longitude'].mean()) + ")\n" + "\nProccessed on " + today + "\nSea Temperature: " + str(round(df['settledTemps'].median(),2)) + " degrees C\n" + str((df['lostPackets'].median())) + " of " +  str((df['totalPackets'].median())) + " total packets corrupted and proccessed out initially (" + str(round((df['lostPackets'].median()/df['totalPackets'].median())*100,2))+ "%)" + "\n" + str((df['lostTimestamps'].median())) + " of " + str((df['timestampsBeforeLoss'].median())) + " timestamps corrupted and proccessed out later (" + str(round((df['lostTimestamps'].median()/df['timestampsBeforeLoss'].median())*100,2))+ "%)\nTotal data loss of " + str(round(((df['lostPackets'].median()+(df['lostTimestamps'].median()/10))/df['totalPackets'].median())*100,2))+  "% (1 packet = 10 timestamps of data)\n\nX acc vs timestamp") 
@@ -131,7 +137,7 @@ def plotData(files):
         #sets to limits of realistic ocean temps
         #axs[0][3].set_ylim(15,25) 
 
-        axs[0][3].set_title("temperature vs timestamp\nMedian: " + str(round(df['Temperature'].mean(),2)) + " degrees C")
+        axs[0][3].set_title("temperature vs timestamp\nMedian: " + str(round(df['Temperature'].median(),2)) + " degrees C")
 
 
         axs[1][0].plot(df['timestamp'], df['X Angular Velocity'])
@@ -151,8 +157,9 @@ def plotData(files):
         axs[1][3].plot(df['timestamp'], df['DTempFuture'])
         axs[1][3].set_title("Δ temperature over\nBlue: 1s, Orange: 5min, Green: -5min")
         axs[1][3].axhline(0, color="orange", linestyle="dotted")
-        axs[1][3].axhline(0.2, color="orange", linestyle="dotted")
-        axs[1][3].axhline(-0.2, color="orange", linestyle="dotted")
+        axs[1][3].axhline(DEGREE_CHANGE_C_CONSIDERED_SETTLED, color="orange", linestyle="dotted")
+        axs[1][3].axhline(-DEGREE_CHANGE_C_CONSIDERED_SETTLED, color="orange", linestyle="dotted")
+        axs[1][3].set_ylim(-1,1)
 
         axs[2][0].scatter( df['timestamp'], df['X Magnetic Field'])
         axs[2][0].set_ylim(-6000,6000)
@@ -170,27 +177,90 @@ def plotData(files):
         #axs[2][3].set_ylim(df['Temperature'].min(), df['Temperature'].max())
 
 
-        #axs[3][0].scatter( df['timestamp'], df['Water Detect'])
-        #axs[3][0].set_title("water detect vs time")
+        #axs[3][0].scatter( df['timestamp'], (df['Water Detect'] > 0))
+        #axs[3][0].set_title("Water Detect vs Time (s)")
+        #FFT
+        yf = fft(df['X Acceleration'].values)
+        yf = fftshift(yf)
+        #    1 / sampling rate
+        xf = fftfreq(yf.size, 1.0 / 4.0)
+        xf = fftshift(xf)
+        axs[3][0].plot(xf, (1.0/yf.size)*abs(yf))
+        axs[3][0].set_title("X acc FFT")
+        axs[3][0].grid()
 
-        #follwing code is to be able to graph cardinal direction eventually. 
-        #make sure to change '.subplots(3,4,fi' to '.subplots(4,4,fi'
-        #if you want to use the following code. 
-        #xovery = df['X Magnetic Field']/df['Y Magnetic Field']
-        #yoverx = df['Y Magnetic Field']/df['X Magnetic Field']
-        #df['atan(X/Y)'] = np.rad2deg(np.arctan(xovery))*4
-        #df['atan(Y/X)'] = np.rad2deg(np.arctan(yoverx))*4
-        #axs[3][0].scatter( df['timestamp'], df['atan(X/Y)'])
-        #axs[3][0].set_title("atan(x/y) vs time")
-        #axs[3][0].set_ylim(-10,370)
-        #axs[3][1].scatter( df['timestamp'], df['atan(Y/X)'])
-        #axs[3][1].set_title("atan(y/x) vs time")
-        #axs[3][1].set_ylim(-10,370)
-        #axs[3][1].axhline(0, color="orange", linestyle="dotted")
-        #axs[3][1].axhline(90, color="orange", linestyle="dotted")
-        #axs[3][1].axhline(180, color="orange", linestyle="dotted")
-        #axs[3][1].axhline(270, color="orange", linestyle="dotted")
-        #axs[3][1].axhline(360, color="orange", linestyle="dotted")
+        #how to filter something
+        #sos = signal.butter(10, 15, 'hp', fs=100, output='sos')
+        #filtered = signal.sosfilt(sos, df['X Acceleration'])
+        #print(filtered)
+
+        axs[3][1].plot(df['timestamp'], df['X Acceleration'])
+        axs[3][1].set_title("X acceleration")
+
+        velox = integrate.cumulative_trapezoid(df['X Acceleration'], df['timestamp'], initial=0)
+        posx = integrate.cumulative_trapezoid(velox, df['timestamp'], initial=0)
+
+        axs[3][2].plot(df['timestamp'], velox)
+        axs[3][2].set_title("X velocity")
+        axs[3][2].grid()
+
+        axs[3][3].plot(df['timestamp'], posx)
+        axs[3][3].set_title("X Pos")
+        axs[3][3].grid()
+
+
+        yf = fft(df['Y Acceleration'].values)
+        yf = fftshift(yf)
+        #    1 / sampling rate
+        xf = fftfreq(yf.size, 1.0 / 4.0)
+        xf = fftshift(xf)
+        axs[4][0].plot(xf, (1.0/yf.size)*abs(yf))
+        axs[4][0].set_title("Y acc FFT")
+        axs[4][0].grid()
+
+
+
+
+
+
+        axs[4][1].plot(df['timestamp'], df['Y Acceleration'])
+        axs[4][1].set_title("Y acceleration")
+
+        veloy = integrate.cumulative_trapezoid(df['Y Acceleration'], df['timestamp'], initial=0)
+        posy = integrate.cumulative_trapezoid(veloy, df['timestamp'], initial=0)
+
+        axs[4][2].plot(df['timestamp'], veloy)
+        axs[4][2].set_title("Y velocity")
+        axs[4][2].grid()
+
+        axs[4][3].plot(df['timestamp'], posy)
+        axs[4][3].set_title("Y Pos")
+        axs[4][3].grid()
+
+
+        yf = fft(df['Z Acceleration'].values)
+        yf = fftshift(yf)
+        #    1 / sampling rate
+        xf = fftfreq(yf.size, 1.0 / 4.0)
+        xf = fftshift(xf)
+        axs[5][0].plot(xf, (1.0/yf.size)*abs(yf))
+        axs[5][0].set_title("Z acc FFT")
+        axs[5][0].grid()
+
+        axs[5][1].plot(df['timestamp'], df['Z Acceleration'])
+        axs[5][1].set_title("Z acceleration")
+
+        veloz = integrate.cumulative_trapezoid(df['Z Acceleration'], df['timestamp'], initial=0)
+        posz = integrate.cumulative_trapezoid(veloz, df['timestamp'], initial=0)
+
+        axs[5][2].plot(df['timestamp'], veloz)
+        axs[5][2].set_title("Z velocity")
+        axs[5][2].grid()
+
+        axs[5][3].plot(df['timestamp'], posz)
+        axs[5][3].set_title("Z Pos")
+        axs[5][3].grid()
+
 
         
 
@@ -222,58 +292,11 @@ def saveDataFromSheet():
     
     dfSFR.close()
 
-def saveDataFromSerial():
-    ser = serial.Serial(port = SerialPort, baudrate=115200,timeout=None)
-
-    dataToBeDecoded = []
-
-    #this block makes sure its where we want it (to not be in CLI mode)
-    #so that when we go into CLI mode its at the start of it
-    ser.write(('N\r').encode())
-    ser.write(('N\r').encode())
-    ser.write(('N\r').encode())
-    ser.write(('N\r').encode())
-    ser.write(('N\r').encode())
-    ser.write(('D\r').encode())
-
-    ser.write(('#CLI\r').encode()) #Access CLI through terminal
-
-    sleep(1)
-
-
-    ser.write(('R\r').encode())
-            
-    ser.write(('R\r').encode())
-
-    while True:
-        data = ser.readline().decode()
-        #print(data)
-        if('{' in data):
-            dataToBeDecoded.append(data)
-
-        #ser.write(('D\r').encode()) #deletes data
-        ser.write(('N\r').encode())
-        
-        
-        if(data == "End of Directory\n"): #Continue reading and appending decoded files to array until end of directory
-            ser.write(('D\r').encode()) #exits CLI
-            break
-        
-        ser.write(('R\r').encode())
-
-    df = open(today + "session-data.sfr", "w") #Save each session as a new line in sfr file
-
-    for i in range(len(dataToBeDecoded)):
-        df.write(dataToBeDecoded[i][:-1] + "\n")
-
-    df.close()
-
 def openAndShowImage():
     # open method used to open different extension image file
     im = Image.open("session_data.png")  
     # This method will show image in any image viewer 
     im.show()
-    return 0
 
 #Actual proccess to run:
 os.system('clear')
@@ -291,8 +314,6 @@ ans = input()
 if(ans == "C"):
     #pull data from sheet and populate sfr file
     saveDataFromSheet()
-if(ans == "S"):
-    saveDataFromSerial()
 
 if(ans == ""):
     decodedData = decodeFromFile(today + "session-data.sfr") #INSERT FILE NAME TO BE DECODED HERE, only the date should be different

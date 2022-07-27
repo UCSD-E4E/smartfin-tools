@@ -1,16 +1,49 @@
+import pandas as pd
+import numpy as np
+import sys
+import serial
 from pickle import TRUE
 import struct
 import base64
 from typing import List
-import pandas as pd
-import numpy as np
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-TEMP_CAL_INTERCEPT = -0.953562976
-TEMP_CAL_X = 0.008094095
+# TO USE: 
+# command: python3 decode.py [sfr file you want to decode]
+# e.g.   : python3 decode.py 200047001750483553353920-000000_temp_00-session-data.sfr
+# WHAT IT DOES:
+# decodes the raw data and saves it to the the format [sfr file name].csv
+# **Note: this data is not calibrated (use calibrate.py)
 
+TIME_NEEDED_TO_SETTLE = 240 
+DEGREE_CHANGE_C_CONSIDERED_SETTLED = 0.1
+file = sys.argv[1]
+
+def decodeFromFile(filepath:str): #Decode data from given file and return as an array with n pandas dataframes (n = number of sessions in file)
+    
+    pdArray = []
+    brokenLines = 0
+    totalLines = 0
+    with open(filepath) as df:
+        for line in df:
+            totalLines = totalLines + 1
+            try:
+                currentRecord = decodeRecord(line.strip())
+                df = pd.DataFrame (currentRecord, columns = ['timestamp','temp+water', 'xAcc','yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag','yMag','zMag','lat','lon'])
+                df = convertToSI(df)
+                if(len(pdArray) > 0):
+                    pdArray[0] = pdArray[0].append(df)
+                else:
+                    pdArray.append(df)
+            except:
+                brokenLines = brokenLines + 1
+    
+    if(brokenLines > 0):
+        print("WARNING: you have some unreadable data. Unreadable lines counted: "+ brokenLines)
+
+    return pdArray
 
 def decodeRecord(record:str)->List:
     packet = base64.b85decode(record)
@@ -73,6 +106,7 @@ parserTable = {
         'names': ['temp+water', 'xAcc', 'yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag', 'yMag', 'zMag', 'lat', 'lon']
     }
 }
+
 def decodePacket(packet:bytes)->List:
     packetList = []
     idx = 0
@@ -114,6 +148,7 @@ def decodePacket(packet:bytes)->List:
             ensemble['dataType'] = dataType
             packetList.append(ensemble)
     return packetList
+
 def convertToSI(df:pd.DataFrame):
     df['Temperature'] = df['temp+water'] / 128
     waterDetect = list(df['Temperature'])
@@ -148,9 +183,11 @@ def convertToSI(df:pd.DataFrame):
         
     return df
 
-if __name__ == "__main__":
-    ensembles = []
-    with open('e4e/data.txt', 'r') as dataFile:
-        for line in dataFile:
-            ensembles.append(decodeRecord(line.strip()))
-    print(ensembles)
+
+
+decodedData = decodeFromFile(file) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+
+decodedData[0].to_csv(file[:-3] + "csv")
+
+print("Data decoded.")
+
