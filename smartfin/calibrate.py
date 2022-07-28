@@ -1,0 +1,146 @@
+import pandas as pd
+import numpy as np
+from argparse import ArgumentParser
+import json
+
+from sklearn import linear_model
+from scipy import integrate
+import matplotlib.pyplot as plt
+
+from calibrate_util import *
+
+import logging
+logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=logging_fmt)
+
+axii = ["+x", "-x", "+y", "-y", "+z", "-z"]
+CAL_PERIOD = 10
+CAL_VAL_FREQ = 5
+
+ACC_COLS = ["xAcc", "yAcc", "zAcc"]
+GYRO_COLS = ["xAng", "yAng", "zAng"]
+MAG_COLS = ["xMag", "yMag", "zMag"]
+THERMAL_COLS = ["temp"]
+
+SENSORS = {"acc": ACC_COLS, "mag": MAG_COLS, "thermal": THERMAL_COLS}
+
+def cal_get_uncald_vec(port_p, axis_name, cols, vec_dict, plotter, period):
+    df = data_input_main(port_p, plotter, period=period)
+    df_cols = df.loc[:,cols]
+    vec_dict[axis_name] = np.asarray(df_cols.mean())
+    
+def cal_gen_y_acc(axis, val):
+    arr = np.zeros(3)
+    arr[axis_to_idx(axis)] = val
+    return arr
+
+def cal_prep_acc_data(data):
+    X = []
+    y = []
+    
+    for key in data:
+        if key[0] == "-":
+            y.append(cal_gen_y_acc(key[1], -1))
+        if key[0] == "+":
+            y.append(cal_gen_y_acc(key[1], 1))
+        X.append(data[key])
+    return X, y
+
+def cal_acc_validate(port_p, coeff_fp, intercept_fp):
+    coeff_ = np.loadtxt(open(coeff_fp, "rb"), delimiter=",", skiprows=0)
+    intercept_ = np.loadtxt(open(intercept_fp, "rb"), delimiter=",", skiprows=0)
+    logging.info("coef: {}".format(coeff_))
+    logging.info("intercept: {}".format(intercept_))
+
+    df = data_input_main(port_p, plot_accelerometer, period=30)
+    df_acc = df.loc[:,["time", "xAcc", "yAcc", "zAcc"]]
+    df_acc = df_acc.rolling(10).mean().dropna()
+    
+    acc_arr = df_acc.loc[:,["xAcc", "yAcc", "zAcc"]].to_numpy()
+    acc_arr[:,2] -= df_acc.mean().zAcc
+    acc_arr[:,1] -= df_acc.mean().yAcc
+
+    x = df_acc.loc[:,"time"].to_numpy()
+    x = (x-x[0]) / 1000
+    mod = linear_model.LinearRegression()
+    mod.coef_ = coeff_
+    mod.intercept_ = intercept_
+    acc_cal = mod.predict(acc_arr)
+    
+    for acc_data in [acc_arr, acc_cal]:
+        delta_v = integrate.cumtrapz(9.8 * acc_data[:,0], x)
+        delta_v = np.insert(delta_v, 0, 0)
+        delta_x = integrate.cumtrapz(delta_v, x)
+        delta_x = np.insert(delta_x, 0, 0)
+        logging.info("delta x: {}".format(delta_x[-1]))
+    
+        fig, axis = plt.subplots(1, 3, figsize=(12,4))
+        axis[0].scatter(x, 9.8 * acc_data[:,0])
+        axis[1].scatter(x, delta_v)
+        axis[2].scatter(x, delta_x)
+        plt.show()
+
+def cal_acc_main(port_p):
+    uncald_vecs = {}
+    for axis in axii:
+        print("Please place fin so gravity is in the {} orientation".format(axis))
+        print("Press enter to start data collection")
+        input()
+        cal_get_uncald_vec(port_p, axis, ACC_COLS, uncald_vecs, plot_accelerometer, CAL_PERIOD)
+    
+    X, y = cal_prep_acc_data(uncald_vecs)
+    logging.debug("X: {}".format(X))
+    logging.debug("y: {}".format(y))
+    
+    mod = linear_model.LinearRegression()
+    mod.fit(X, y)
+    logging.info("coef: {}".format(mod.coef_))
+    logging.info("intercept: {}".format(mod.intercept_))
+    
+    return mod.coef_, mod.intercept_, mod
+
+def cal_gyro_main(port_p, period=60):
+    df = data_input_main(port_p, plot_gyroscope, period=period)
+    df_gyroscope = df.loc[:,GYRO_COLS]
+    
+    df_cal = df_gyroscope.mean() * -1
+    logging.info("Calibration offsets: {}".format(df_cal.to_numpy()))
+    return df_cal.to_numpy()
+
+def apply_cal(input_dir, df_data):
+    cal_data_dict = load_cal(input_dir)
+    apply_cal_sensor("acc", SENSORS["acc"], cal_data_dict, df_data)
+    
+def apply_cal_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
+    coeff_key = "{}_coeff".format(sensor_name)
+    intercept_key = "{}_intercept".format(sensor_name)
+    if coeff_key not in cal_data_dict and intercept_key not in cal_data_dict:
+        return None
+    
+    mod = linear_model.LinearRegression()
+    mod.coef_ = csv_str_to_arr(cal_data_dict[coeff_key])
+    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key])
+    
+    np_uncal_data = df_data.loc[:,sensor_cols].to_numpy()
+    logging.info(np_uncal_data)
+    
+    np_cal_data = np.stack([mod.predict(row.reshape(row.shape[0], 1)) if not np.isnan(row).any() else np.full((row.shape), np.nan) for row in np_uncal_data])
+    logging.info("calibrated data shape: {}".format(np_cal_data.shape))
+    logging.info("calibrated data: {}".format(np_cal_data))
+    
+def main():
+    parser = ArgumentParser()
+    parser.add_argument("port")
+    parser.add_argument('--output_dir', '-o', default=None)
+    parser.add_argument('--input_dir', '-i', default=None)
+
+    args = parser.parse_args()
+    output_dir = args.output_dir
+
+    input_dir = args.input_dir
+    #coef_, intercept_, = cal_acc_main(args.port)
+    
+    apply_cal("calibrations.json", pd.read_csv(input_dir))
+
+if __name__ == "__main__":
+    main()

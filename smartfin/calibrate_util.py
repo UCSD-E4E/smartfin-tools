@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
 from cli_util import drop_into_cli
+import json
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -63,6 +64,16 @@ def exit_monitor_sensors(port):
 
 def split_data(df, cols):
     return [df.loc[:,col] for col in cols]
+
+def axis_to_idx(axis):
+    if (axis == "x"):
+        return 0
+    if (axis == "y"):
+        return 1
+    if (axis == "z"):
+        return 2
+    return None
+
 
 def plot_magnetometer_3D(df, title=None):
     x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
@@ -137,10 +148,30 @@ def data_input_main(port_p, plotter, period=None):
             run_event.clear()
             data_thread.join()
             logging.info("Threads successfully closed")
+            logging.debug(df_data)
+            return df_data
+
+def load_cal(input_dir):
+    with open(input_dir, 'r') as json_file:
+        prev_cal_data = json.load(json_file)
+        
+    return prev_cal_data
+
+def save_cal(output_dir, cal_type, cal_data):
+    if isinstance(cal_data, np.ndarray):
+        cal_data = arr_to_csv_str(cal_data)
+
+    prev_cal_data = load_cal(output_dir)
+    prev_cal_data[cal_type] = cal_data
     
-    logging.debug(df_data)
-    return df_data
-    
+    with open(output_dir, 'w') as json_file:
+        json.dump(prev_cal_data, json_file)
+
+def arr_to_csv_str(arr):
+    return "\n".join([",".join([str(element) for element in row]) if arr.ndim > 1 else str(row) for row in arr])
+
+def csv_str_to_arr(csv_str):
+    return np.array([[float(element) for element in row.split(",")] for row in csv_str.split('\n')])
 
 def main():
     parser = ArgumentParser()
@@ -150,7 +181,7 @@ def main():
     args = parser.parse_args()
     
     output_dir = args.output_dir
-    df_data = data_input_main(args.port, plot_gyroscope, 10)
+    df_data = data_input_main(args.port, plot_accelerometer, 10)
     
     if output_dir:
         save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
