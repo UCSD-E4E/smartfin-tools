@@ -98,7 +98,6 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
     return pdArray
 
 def plotData(files):
-
     plotCount = 0
     for df in files:
         #gets location name
@@ -183,7 +182,7 @@ def plotData(files):
         yf = fft(df['X Acceleration'].values)
         yf = fftshift(yf)
         #    1 / sampling rate
-        xf = fftfreq(yf.size, 1.0 / 4.0)
+        xf = fftfreq(yf.size, 1.0)
         xf = fftshift(xf)
         axs[3][0].plot(xf, (1.0/yf.size)*abs(yf))
         axs[3][0].set_title("X acc FFT")
@@ -211,8 +210,8 @@ def plotData(files):
 
         yf = fft(df['Y Acceleration'].values)
         yf = fftshift(yf)
-        #    1 / sampling rate
-        xf = fftfreq(yf.size, 1.0 / 4.0)
+        #                 1 / sampling rate
+        xf = fftfreq(yf.size, 1.0)
         xf = fftshift(xf)
         axs[4][0].plot(xf, (1.0/yf.size)*abs(yf))
         axs[4][0].set_title("Y acc FFT")
@@ -241,7 +240,7 @@ def plotData(files):
         yf = fft(df['Z Acceleration'].values)
         yf = fftshift(yf)
         #    1 / sampling rate
-        xf = fftfreq(yf.size, 1.0 / 4.0)
+        xf = fftfreq(yf.size, 1.0)
         xf = fftshift(xf)
         axs[5][0].plot(xf, (1.0/yf.size)*abs(yf))
         axs[5][0].set_title("Z acc FFT")
