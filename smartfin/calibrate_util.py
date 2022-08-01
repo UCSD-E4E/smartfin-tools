@@ -181,7 +181,7 @@ def main():
     args = parser.parse_args()
     
     output_dir = args.output_dir
-    df_data = data_input_main(args.port, plot_accelerometer, 10)
+    df_data = data_input_main(args.port, plot_magnetometer_3D, 10)
     
     if output_dir:
         save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
