@@ -2,10 +2,13 @@ import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
 import json
+import ctypes
 
 from sklearn import linear_model
 from scipy import integrate
 import matplotlib.pyplot as plt
+
+from cli_util import drop_into_cli
 
 from calibrate_util import *
 
@@ -23,6 +26,8 @@ MAG_COLS = ["xMag", "yMag", "zMag"]
 THERMAL_COLS = ["temp"]
 
 SENSORS = {"acc": ACC_COLS, "mag": MAG_COLS, "thermal": THERMAL_COLS}
+
+CAL_COEFFS = ["gyro_intercept", "acc_coeff", "acc_intercept", "mag_coeff", "mag_intercept", "thermal_coeff", "thermal_intercept"]
 
 def cal_get_uncald_vec(port_p, axis_name, cols, vec_dict, plotter, period):
     df = data_input_main(port_p, plotter, period=period)
@@ -119,7 +124,7 @@ def apply_cal_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     
     mod = linear_model.LinearRegression()
     mod.coef_ = csv_str_to_arr(cal_data_dict[coeff_key])
-    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key])
+    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key]) #might not work because all arrays are 2D
     
     np_uncal_data = df_data.loc[:,sensor_cols].to_numpy()
     logging.info(np_uncal_data)
@@ -127,6 +132,45 @@ def apply_cal_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     np_cal_data = np.stack([mod.predict(row.reshape(row.shape[0], 1)) if not np.isnan(row).any() else np.full((row.shape), np.nan) for row in np_uncal_data])
     logging.info("calibrated data shape: {}".format(np_cal_data.shape))
     logging.info("calibrated data: {}".format(np_cal_data))
+    
+def cal_board_set(port_p, input_dir):
+    cal_dict_str = load_cal(input_dir)
+    cal_dict_arr = {key: csv_str_to_arr(cal_dict_str[key]) for key in cal_dict_str} #all arrays are 2D
+    
+    cal_data = cal_dict_arr["acc_coeff"]
+    cal_data = cal_data.flatten()
+    logging.info(cal_data)
+    
+    cal_dict_arr = {key: [int(float_to_bin(element), 2) for element in cal_dict_arr[key].flatten()] for key in cal_dict_arr}
+    logging.info(cal_dict_arr)
+    
+    #converts each float to binary then unsigned 32 bit int seperated by space
+    #cal_conv = [bin_to_float((bin(int(num))[2:]).zfill(32)) for num in cal_data]
+    #logging.info(cal_conv)
+
+    logging.info("keys: {}".format(cal_dict_arr.keys()))
+    with serial.Serial(port=port_p, baudrate=115200) as port:
+        port.timeout = 1
+        drop_into_cli(port)
+        
+        port.write('~\r'.encode())
+        while True:
+            line = port.readline().decode(errors='ignore').rstrip('\n')
+            print(line)
+            if (line == "press enter to start"):
+                port.write("\r".encode())
+            elif (line in CAL_COEFFS):
+                cal_data = cal_dict_arr[line]
+                
+                for coeff_ in cal_data:
+                    port.write("{}\r".format(coeff_).encode())
+                    
+                port.write("\r".format(coeff_).encode())
+            elif (line == "Unknown command"):
+                break
+            else:
+                continue
+        port.write('X\r'.encode())
     
 def main():
     parser = ArgumentParser()
@@ -140,7 +184,7 @@ def main():
     input_dir = args.input_dir
     #coef_, intercept_, = cal_acc_main(args.port)
     
-    apply_cal("calibrations.json", pd.read_csv(input_dir))
+    cal_board_set(args.port, "calibrations.json")
 
 if __name__ == "__main__":
     main()

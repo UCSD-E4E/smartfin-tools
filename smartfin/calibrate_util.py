@@ -7,6 +7,7 @@ import numpy as np
 from argparse import ArgumentParser
 from cli_util import drop_into_cli
 import json
+import struct
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -172,6 +173,12 @@ def arr_to_csv_str(arr):
 
 def csv_str_to_arr(csv_str):
     return np.array([[float(element) for element in row.split(",")] for row in csv_str.split('\n')])
+
+def float_to_bin(num):
+    return format(struct.unpack('!I', struct.pack('!f', num))[0], '032b')
+
+def bin_to_float(binary):
+    return struct.unpack('!f',struct.pack('!I', int(binary, 2)))[0]
 
 def main():
     parser = ArgumentParser()
