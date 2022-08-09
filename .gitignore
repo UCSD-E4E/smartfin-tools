@@ -135,3 +135,5 @@ credentials.json
 test_results/
 **.csv
 **.png
+**.sfr
+**.numbers
