@@ -5,7 +5,7 @@ import shutil
 
 import pandas as pd
 
-import smartfin.decoder as scd
+import decoder as scd
 
 
 def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False):
@@ -25,7 +25,7 @@ def sfrToCsv(in_sfr: Path, out_csv: Path):
     
     df = pd.DataFrame(ensembles)
     df = scd.convertToSI(df)
-    df.to_csv(out_csv)
+    df.to_csv(out_csv, index=False)
 
 def sfpToCsv(in_sfp: Path, out_csv: Path):
     ensembles = []
@@ -35,7 +35,7 @@ def sfpToCsv(in_sfp: Path, out_csv: Path):
     
     df = pd.DataFrame(ensembles)
     df = scd.convertToSI(df)
-    df.to_csv(out_csv)
+    df.to_csv(out_csv, index=False)
 
 def main():
     parser = ArgumentParser()
