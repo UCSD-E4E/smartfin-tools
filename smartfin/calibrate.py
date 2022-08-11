@@ -23,9 +23,15 @@ CAL_VAL_FREQ = 5
 ACC_COLS = ["xAcc", "yAcc", "zAcc"]
 GYRO_COLS = ["xAng", "yAng", "zAng"]
 MAG_COLS = ["xMag", "yMag", "zMag"]
+
+ACC_COLS_SI = ["X Acceleration", "Y Acceleration", "Z Acceleration"]
+GYRO_COLS_SI = ["X Angular Velocity", "Y Angular Velocity", "Z Angular Velocity"]
+MAG_COLS_SI = ["X Angular Velocity", "Y Angular Velocity", "Z Angular Velocity"]
+THERMAL_COLS_SI = ["Temperature"]
+
 THERMAL_COLS = ["temp"]
 
-SENSORS = {"acc": ACC_COLS, "mag": MAG_COLS, "thermal": THERMAL_COLS}
+SENSORS = {"gyro": GYRO_COLS_SI, "acc": ACC_COLS_SI, "mag": MAG_COLS_SI, "thermal": THERMAL_COLS_SI}
 
 CAL_COEFFS = ["gyro_intercept", "acc_coeff", "acc_intercept", "mag_coeff", "mag_intercept", "thermal_coeff", "thermal_intercept"]
 
@@ -114,7 +120,9 @@ def cal_gyro_main(port_p, period=60):
 
 def apply_cal(input_dir, df_data):
     cal_data_dict = load_cal(input_dir)
-    apply_cal_sensor("acc", SENSORS["acc"], cal_data_dict, df_data)
+    
+    for sensor in SENSORS:
+        apply_cal_sensor(sensor, SENSORS[sensor], cal_data_dict, df_data)
     
 def apply_cal_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     coeff_key = "{}_coeff".format(sensor_name)
@@ -123,15 +131,22 @@ def apply_cal_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
         return None
     
     mod = linear_model.LinearRegression()
-    mod.coef_ = csv_str_to_arr(cal_data_dict[coeff_key])
-    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key]) #might not work because all arrays are 2D
+    if coeff_key not in cal_data_dict:
+        mod.coef_ = np.identity(len(sensor_cols))
+    else:
+        mod.coef_ = csv_str_to_arr(cal_data_dict[coeff_key])
+    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key]).flatten() #might not work because all arrays are 2D
     
-    np_uncal_data = df_data.loc[:,sensor_cols].to_numpy()
-    logging.info(np_uncal_data)
+    df_uncal_data = df_data.loc[:,sensor_cols]
+    nan_msk = ~df_data.loc[:,sensor_cols].isna().any(axis=1)
     
-    np_cal_data = np.stack([mod.predict(row.reshape(row.shape[0], 1)) if not np.isnan(row).any() else np.full((row.shape), np.nan) for row in np_uncal_data])
-    logging.info("calibrated data shape: {}".format(np_cal_data.shape))
-    logging.info("calibrated data: {}".format(np_cal_data))
+    #performs prediction
+    yhat = np.full(df_uncal_data.shape, np.nan)
+    pred = mod.predict(df_uncal_data[nan_msk].to_numpy())
+    yhat[nan_msk.astype(bool), ...] = pred
+    
+    #inserts columns in original dataframe
+    df_data.loc[:,sensor_cols] = yhat
     
 def cal_board_set(port_p, input_dir):
     cal_dict_str = load_cal(input_dir)
@@ -184,7 +199,10 @@ def main():
     input_dir = args.input_dir
     #coef_, intercept_, = cal_acc_main(args.port)
     
-    cal_board_set(args.port, "calibrations.json")
+    df_data = pd.read_csv("_200047001750483553353920-20220728-201824-session-data.csv")
+    apply_cal(args.input_dir, df_data)
+    
+    df_data.to_csv("_200047001750483553353920-20220728-201824-session-data_cal.csv", index=False)
 
 if __name__ == "__main__":
     main()
