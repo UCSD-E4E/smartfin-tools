@@ -93,3 +93,8 @@ googleapiclient.discovery,
 IPython,
 pytz,
 pickle,
+
+# Still need more info?
+message in the smartfin chat
+
+(readme written by Robert O'Brien August 18 2022)
