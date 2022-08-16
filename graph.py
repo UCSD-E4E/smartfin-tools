@@ -3,6 +3,12 @@ from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
 
+#allows you to graph the data downloaded and decoded + calibrated from the fin
+
+#TO USE: 
+# command: python graph.py [filename].csv
+# e.x.   : python graph.py _cal-200047001750483553353920-20220804-231057-session-data.csv 
+
 #variables
 TIME_NEEDED_TO_SETTLE = 240
 DEGREE_CHANGE_C_CONSIDERED_SETTLED = 0.2
@@ -104,9 +110,10 @@ def plotData(file):
                     wspace=0.4, 
                     hspace=0.4)
 
-        plt.show()
+        plt.savefig(file[:-3] + "png")
         plotCount+=1
 
-plotData(sys.argv[1])
+if __name__ == "__main__":
+        plotData(sys.argv[1])
 
-print("Graphing complete.")
+        print("Graphing complete.")

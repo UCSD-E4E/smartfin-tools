@@ -10,13 +10,30 @@ from time import sleep, time
 import datetime
 import os
 
-#this code is used to collect the actual data for calibration. Use calibrateTemp to 
-#get the correct calibration values based off this data
-#RUN WHILE PLUGGED INTO BOTH FIN AND SBE COMMAND
-#>python3 getCalibrateData.py /dev/tty.usbserial* /dev/tty.usbmodem*
-#                               SBE port        fin port
+#This code is used to collect temperature data from both the fin and the SBE-37
+#with synced timestamps in order to calibrate the fin to the accuracy of the SBE-37.
+#returns a file in the directory called "SBETemperatures_[TIME].csv"
+#use download.py + decode.py to get the temperatures off the fin later.
 
-    #Enter your fin serial port name as a command line argument
+#To emphasize this, the timestamps you get from the fin and SBETemperatures[...].csv
+#will be synced up to be able to compare temperature readings.
+
+
+#SETUP: PLUG IN BOTH FIN AND SBE-37 INTO COMPUTER BEFORE RUNNING COMMAND
+#MAKE SURE THE FIN IS RESET AND ENTERS CHARGE MODE
+
+#RUN COMMAND FORMAT: 
+#python3 getCalibrateData.py [SBE-27SI PORT ON DEVICE] [FIN USB PORT ON DEVICE]
+#EXAMPLE: 
+#python3 getCalibrateData.py  /dev/tty.usbserial14421        /dev/tty.usbmodem23314
+#                               SBE port on computer          fin port on computer
+
+#note: make sure the firmware on your fin allows you to force a session using the 'S'
+#command in the CLI interface by getting into the fin's CLI and typing '#'.
+#If you cannot see 'S to force session' try the 'force_session' branch on github and install
+#that firmware for the calibration. 
+
+    #Fin
 SerialPortFin = str(sys.argv[2]) 
 serFin = serial.Serial(port = SerialPortFin, baudrate=115200,timeout=None)
 

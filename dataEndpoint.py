@@ -8,6 +8,15 @@ import IPython
 import pandas as pd
 import pytz
 
+#Allows a user to access the data endpoint google sheet
+
+#Simply run "python dataEndpoint.py" 
+#Must have the proper credentals in a credentials.json file in the same directory
+#Example format of credentials.json:
+#{"installed":{"client_id":"XXXX","project_id":"XXXX","auth_uri":"XXXX","token_uri":"XXXX","auth_provider_x509_cert_url":"XXXX","client_secret":"XXXX","redirect_uris":["XXXX"]}}
+
+
+
 def authenticate(SCOPES, credentialsPath):
     creds = None
     if os.path.exists('aa2.pickle'):

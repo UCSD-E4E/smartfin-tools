@@ -1,21 +1,20 @@
 import pandas as pd
 import numpy as np
 import sys
-import serial
-from pickle import TRUE
 import struct
 import base64
 from typing import List
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+# Decodes the raw data and saves it to the the format [original sfr file name].csv
+# ** most useful after using download.py
 
 # TO USE: 
 # command: python3 decode.py [sfr file you want to decode]
 # e.g.   : python3 decode.py 200047001750483553353920-000000_temp_00-session-data.sfr
-# WHAT IT DOES:
-# decodes the raw data and saves it to the the format [sfr file name].csv
-# **Note: this data is not calibrated (use calibrate.py)
+
+# **Note: this data is not calibrated (see calibrate.py for more information)
 
 TIME_NEEDED_TO_SETTLE = 240 
 DEGREE_CHANGE_C_CONSIDERED_SETTLED = 0.1
@@ -41,7 +40,7 @@ def decodeFromFile(filepath:str): #Decode data from given file and return as an 
                 brokenLines = brokenLines + 1
     
     if(brokenLines > 0):
-        print("WARNING: you have some unreadable data. Unreadable lines counted: "+ brokenLines)
+        print("WARNING: you have some unreadable data. Unreadable lines counted: "+ (str)(brokenLines))
 
     return pdArray
 
@@ -155,11 +154,11 @@ def convertToSI(df:pd.DataFrame):
     for i in range(len(waterDetect)):
         if not np.isnan(waterDetect[i]):
             if (waterDetect[i] >= 100):
-                waterDetect[i] = TRUE
+                waterDetect[i] = True
                 df['Temperature'][i] = df['Temperature'][i] - 100
     df['Water Detect'] = waterDetect
     if 'xAcc' in df.columns:
-        df['X Acceleration'] = (df['xAcc'] - 10.168) / 16384
+        df['X Acceleration'] = df['xAcc'] / 16384
     if 'yAcc' in df.columns:
         df['Y Acceleration'] = df['yAcc'] / 16384
     if 'zAcc' in df.columns:
@@ -184,10 +183,7 @@ def convertToSI(df:pd.DataFrame):
     return df
 
 
-
-decodedData = decodeFromFile(file) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
-
-decodedData[0].to_csv(file[:-3] + "csv")
-
-print("Data decoded.")
-
+if __name__ == "__main__":
+    decodedData = decodeFromFile(file) #INSERT FILE NAME TO BE DECODED HERE, only the date should be different
+    decodedData[0].to_csv(file[:-3] + "csv")
+    print(decodedData)
