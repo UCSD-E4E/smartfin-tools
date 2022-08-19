@@ -22,6 +22,11 @@ logging.basicConfig(level=logging.INFO, format=logging_fmt)
 
 DATA_COLUMNS = ["time", "xAcc", "yAcc", "zAcc", "xAng", "yAng", "zAng", "xMag", "yMag", "zMag", "temp", "water", "lat", "lon"]
 
+ACC_COLS = ["xAcc", "yAcc", "zAcc"]
+GYRO_COLS = ["xAng", "yAng", "zAng"]
+MAG_COLS = ["xMag", "yMag", "zMag"]
+THERMAL_COLS = ["temp"]
+
 class data_input_thread(threading.Thread):
     def __init__(self, threadID, port, run_event, df_data, period):
         threading.Thread.__init__(self)
