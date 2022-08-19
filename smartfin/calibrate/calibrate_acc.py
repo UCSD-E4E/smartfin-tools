@@ -4,6 +4,8 @@ from argparse import ArgumentParser
 import json
 import logging as logger
 
+from sklearn import linear_model
+
 from calibrate_util import *
 
 DEFAULT_CAL_PERIOD = 10
@@ -14,6 +16,18 @@ def cal_get_uncald_vec(port_p, axis_name, cols, vec_dict, plotter, period):
     df = data_input_main(port_p, plotter, period=period)
     df_cols = df.loc[:,cols]
     vec_dict[axis_name] = np.asarray(df_cols.mean())
+    
+def cal_prep_acc_data(data):
+    X = []
+    y = []
+    
+    for key in data:
+        if key[0] == "-":
+            y.append(cal_gen_y_acc(key[1], -1))
+        if key[0] == "+":
+            y.append(cal_gen_y_acc(key[1], 1))
+        X.append(data[key])
+    return X, y
 
 def cal_acc_main(port_p, cal_period):
     uncald_vecs = {}
