@@ -24,5 +24,5 @@ def main():
     args = parser.parse_args()
     output_dir = args.output_dir
 
-    save_cal(output_dir, "gyro_intercept", cal_gyro_main(args.port, args.cal_per))
+    save_cal(output_dir, "gyro_intercept", cal_gyro_main(args.port, float(args.cal_per)))
     
