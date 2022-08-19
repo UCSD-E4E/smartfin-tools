@@ -51,7 +51,7 @@ def cal_acc_main(port_p, cal_period):
     logger.info("coef: {}".format(mod.coef_))
     logger.info("intercept: {}".format(mod.intercept_))
     
-    return mod.coef_, mod.intercept_, mod
+    return mod.coef_, mod.intercept_
 
 def main():
     parser = ArgumentParser()
@@ -62,7 +62,7 @@ def main():
     args = parser.parse_args()
     output_dir = args.output_dir
 
-    coef_, intercept_, = cal_acc_main(args.port, float(args.cal_per))
+    coef_, intercept_ = cal_acc_main(args.port, float(args.cal_per))
     save_cal(output_dir, "acc_coeff", coef_)
     save_cal(output_dir, "acc_intercept", intercept_)
     
