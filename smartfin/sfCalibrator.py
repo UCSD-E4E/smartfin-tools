@@ -52,9 +52,15 @@ def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     
 def main():
     parser = ArgumentParser()
-    parser.add_argument("data")
-    parser.add_argument("coef")
+    parser.add_argument("data_fp")
+    parser.add_argument("coef_fp")
 
     args = parser.parse_args()
-    output_dir = args.output_dir
+    
+    df_data = pd.read_csv(args.data_fp)
+    calibrate_main(args.coef_fp, df_data)
+    
+if __name__ == "__main__":
+    main()
+    
     
