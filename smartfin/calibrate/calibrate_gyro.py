@@ -28,3 +28,6 @@ def main():
 
     save_cal(output_dir, "gyro_intercept", cal_gyro_main(args.port, float(args.cal_per)))
     
+if __name__ == "__main__":
+    main()
+    
