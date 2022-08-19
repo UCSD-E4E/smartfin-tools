@@ -5,13 +5,16 @@ import time
 import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
-from cli_util import drop_into_cli
 import json
 import struct
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import threading
+
+import sys
+sys.path.append("../")
+from cli_util import drop_into_cli
 
 import logging
 logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'

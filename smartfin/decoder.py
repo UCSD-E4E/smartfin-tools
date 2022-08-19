@@ -139,6 +139,10 @@ def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             # logger.warning(f"Unknown data type: 0 at index {idx}")
             idx -= 2
             continue
+        elif dataType == 12:
+            ensemble = {}
+            ensemble['dataType'] = dataType
+            packetList.append(ensemble)
         elif dataType == 0x0F:
             # text
             textLen = packet[idx]

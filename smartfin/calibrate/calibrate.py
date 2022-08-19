@@ -8,6 +8,9 @@ from sklearn import linear_model
 from scipy import integrate
 import matplotlib.pyplot as plt
 
+import sys
+sys.path.append("../")
+
 from cli_util import drop_into_cli
 
 from calibrate_util import *
@@ -199,10 +202,8 @@ def main():
     input_dir = args.input_dir
     #coef_, intercept_, = cal_acc_main(args.port)
     
-    df_data = pd.read_csv("_200047001750483553353920-20220728-201824-session-data.csv")
-    apply_cal(args.input_dir, df_data)
+    cal_board_set(args.port, "calibrations.json")
     
-    df_data.to_csv("_200047001750483553353920-20220728-201824-session-data_cal.csv", index=False)
 
 if __name__ == "__main__":
     main()
