@@ -11,6 +11,8 @@ from cli_util import drop_into_cli
 from calibrate.calibrate_util import *
 
 import logging as logger
+logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=logging_fmt)
 
 ACC_COLS_SI = ["X Acceleration", "Y Acceleration", "Z Acceleration"]
 GYRO_COLS_SI = ["X Angular Velocity", "Y Angular Velocity", "Z Angular Velocity"]
@@ -59,6 +61,8 @@ def main():
     
     df_data = pd.read_csv(args.data_fp)
     calibrate_main(args.coef_fp, df_data)
+    
+    logger.info(df_data.head())
     
 if __name__ == "__main__":
     main()
