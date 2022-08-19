@@ -4,6 +4,8 @@ from argparse import ArgumentParser
 import logging as logger
 
 from calibrate_util import *
+logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=logging_fmt)
 
 DEFAULT_CAL_PERIOD = 60
 

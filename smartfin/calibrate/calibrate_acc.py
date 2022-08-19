@@ -3,6 +3,8 @@ import numpy as np
 from argparse import ArgumentParser
 import json
 import logging as logger
+logging_fmt = '%(asctime)s:%(name)s:%(levelname)s:%(message)s'
+logging.basicConfig(level=logging.INFO, format=logging_fmt)
 
 from sklearn import linear_model
 
