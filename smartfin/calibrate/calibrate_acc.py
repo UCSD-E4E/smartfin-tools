@@ -29,6 +29,11 @@ def cal_prep_acc_data(data):
         X.append(data[key])
     return X, y
 
+def cal_gen_y_acc(axis, val):
+    arr = np.zeros(3)
+    arr[axis_to_idx(axis)] = val
+    return arr
+
 def cal_acc_main(port_p, cal_period):
     uncald_vecs = {}
     for axis in axii:
