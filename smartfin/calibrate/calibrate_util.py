@@ -84,7 +84,7 @@ def axis_to_idx(axis):
     return None
 
 
-def plot_magnetometer_3D(df, title=None):
+def plot_magnetometer_3D(df, title=None, real_time=True):
     x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
 
     ax = plt.axes(projection='3d')
@@ -96,21 +96,27 @@ def plot_magnetometer_3D(df, title=None):
     if title:
         plt.title(title)
 
-    plt.pause(0.001)
+    if real_time:
+        plt.pause(0.001)
+    else:
+        plt.show()
 
-def plot_magnetometer_2D(df, title=None):
+def plot_magnetometer_2D(df, title=None, real_time=True):
     x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
 
-    plt.scatter(x, y, '.b', label='xy')
-    plt.scatter(y, z, '.r', label='yz')
-    plt.scatter(z, x, '.g', label='zx')
+    plt.scatter(x, y, c='blue', label='xy')
+    plt.scatter(y, z, c='red', label='yz')
+    plt.scatter(z, x, c='green', label='zx')
     plt.xlabel('$\mu$T')
     plt.ylabel('$\mu$T')
     plt.grid(True)
     if title:
         plt.title(title)
         
-    plt.pause(0.001)
+    if real_time:
+        plt.pause(0.001)
+    else:
+        plt.show()
 
 def plot_time_series(df, cols, ylim=None, xlim = None, title=None):
     data = split_data(df, ["time"] + cols)
