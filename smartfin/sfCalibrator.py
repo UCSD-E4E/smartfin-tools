@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
 import json
+import os
 
 from sklearn import linear_model
 import matplotlib.pyplot as plt
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format=logging_fmt)
 
 ACC_COLS_SI = ["X Acceleration", "Y Acceleration", "Z Acceleration"]
 GYRO_COLS_SI = ["X Angular Velocity", "Y Angular Velocity", "Z Angular Velocity"]
-MAG_COLS_SI = ["X Angular Velocity", "Y Angular Velocity", "Z Angular Velocity"]
+MAG_COLS_SI = ["X Magnetic Field", "Y Magnetic Field", "Z Magnetic Field"]
 THERMAL_COLS_SI = ["Temperature"]
 
 SENSORS = {"gyro": GYRO_COLS_SI, "acc": ACC_COLS_SI, "mag": MAG_COLS_SI, "thermal": THERMAL_COLS_SI}
@@ -56,13 +57,20 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("data_fp")
     parser.add_argument("coef_fp")
+    parser.add_argument("--output_dir", "-o", default=None)
 
     args = parser.parse_args()
     
     df_data = pd.read_csv(args.data_fp)
     calibrate_main(args.coef_fp, df_data)
     
-    logger.info(df_data.head())
+    output_dir = args.output_dir
+    if not output_dir:
+        filename, file_ext = os.path.splitext(args.data_fp)
+        output_dir = "{}_cal{}".format(filename, file_ext)
+        
+    df_data.to_csv(output_dir, index=False)
+    
     
 if __name__ == "__main__":
     main()
