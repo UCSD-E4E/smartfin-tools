@@ -8,6 +8,8 @@ import math
 
 from calibrate_util import *
 
+MFIELD = 300
+
 def ellipsoid_fit(s):
     ''' Estimate ellipsoid parameters from a set of points.
         Parameters
@@ -79,20 +81,28 @@ def createMatrices(df, mag_field):
     M_1 = linalg.inv(M)
     b = -np.dot(M_1, n)
     A_1 = np.real(mag_field / np.sqrt(np.dot(n.T, np.dot(M_1, n)) - d) * linalg.sqrtm(M))
-
-
-    print("Soft iron transformation matrix:\n", A_1)
-    print("Hard iron bias:\n", b)
+    
+    return A_1, b
 
 def cal_mag_main(port_p):
-    #df = data_input_main(port_p, plot_magnetometer_3D) real time input
+    df = data_input_main(port_p, plot_magnetometer_3D).loc[:,MAG_COLS] #real time input
+    coef_, intercept_ = createMatrices(df, MFIELD)
     
-    df = pd.read_csv("mag_cal.csv")
+    logger.info("coefficient:\n{}".format(coef_))
+    logger.info("intercept:\n{}".format(intercept_))
+    
+    df_cal = df.copy()
+    calibrate_main_sensor("mag", MAG_COLS, {"mag_coeff": arr_to_csv_str(coef_), "mag_intercept":arr_to_csv_str(intercept_)}, df_cal)
     
     plot_magnetometer_3D(df, "Uncalibrated 3D", real_time=False)
     plot_magnetometer_2D(df, "Uncalibrated 2D", real_time=False)
+    plot_magnetometer_3D(df_cal, "Calibrated 3D", real_time=False)
+    plot_magnetometer_2D(df_cal, "Calibrated 2D", real_time=False)
     
-    createMatrices(df, 300)
+    logger.info(df.head())
+    logger.info(df_cal.head())
+
+    return coef_, intercept_
     
 def main():
     parser = ArgumentParser()
@@ -105,6 +115,7 @@ def main():
     coef_, intercept_ = cal_mag_main(args.port)
     save_cal(output_dir, "mag_coeff", coef_)
     save_cal(output_dir, "mag_intercept", intercept_)
+
     
 if __name__ == "__main__":
     main()
