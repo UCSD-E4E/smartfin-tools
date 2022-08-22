@@ -4,9 +4,6 @@ from argparse import ArgumentParser
 import json
 import os
 
-from sklearn import linear_model
-import matplotlib.pyplot as plt
-
 from cli_util import drop_into_cli
 
 from calibrate.calibrate_util import *
@@ -28,30 +25,6 @@ def calibrate_main(input_dir, df_data):
     
     for sensor in SENSORS:
         calibrate_main_sensor(sensor, SENSORS[sensor], cal_data_dict, df_data)
-
-def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
-    coeff_key = "{}_coeff".format(sensor_name)
-    intercept_key = "{}_intercept".format(sensor_name)
-    if coeff_key not in cal_data_dict and intercept_key not in cal_data_dict:
-        return None
-    
-    mod = linear_model.LinearRegression()
-    if coeff_key not in cal_data_dict:
-        mod.coef_ = np.identity(len(sensor_cols))
-    else:
-        mod.coef_ = csv_str_to_arr(cal_data_dict[coeff_key])
-    mod.intercept_ = csv_str_to_arr(cal_data_dict[intercept_key]).flatten() #might not work because all arrays are 2D
-    
-    df_uncal_data = df_data.loc[:,sensor_cols]
-    nan_msk = ~df_data.loc[:,sensor_cols].isna().any(axis=1)
-    
-    #performs prediction
-    yhat = np.full(df_uncal_data.shape, np.nan)
-    pred = mod.predict(df_uncal_data[nan_msk].to_numpy())
-    yhat[nan_msk.astype(bool), ...] = pred
-    
-    #inserts columns in original dataframe
-    df_data.loc[:,sensor_cols] = yhat
     
 def main():
     parser = ArgumentParser()
