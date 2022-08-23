@@ -86,7 +86,10 @@ def createMatrices(df, mag_field):
 
 def cal_mag_main(port_p):
     df = data_input_main(port_p, plot_magnetometer_3D).loc[:,MAG_COLS] #real time input
-    coef_, intercept_ = createMatrices(df, MFIELD)
+    hard_iron, soft_iron = createMatrices(df, MFIELD)
+    
+    coef_ = hard_iron
+    intercept_ = np.matmul(hard_iron, -1*soft_iron)
     
     logger.info("coefficient:\n{}".format(coef_))
     logger.info("intercept:\n{}".format(intercept_))
