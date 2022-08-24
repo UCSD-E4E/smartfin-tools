@@ -46,3 +46,18 @@ optional arguments:
   --delete, -d
   --output_dir OUTPUT_DIR, -o OUTPUT_DIR
 ```
+
+# sfCalibrator
+`sfCalibrator` applies calibrations given calibration coefficients and data. Can specify where calibrated data is saved with output_dir argument
+```
+sfCalibrator --help
+usage: sfCalibrator.py [-h] [--output_dir OUTPUT_DIR] data_fp coef_fp
+
+positional arguments:
+  data_fp
+  coef_fp
+
+options:
+  -h, --help            show this help message and exit
+  --output_dir OUTPUT_DIR, -o OUTPUT_DIR
+```
