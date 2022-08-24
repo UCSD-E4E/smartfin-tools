@@ -176,8 +176,11 @@ def load_cal(input_dir):
 def save_cal(output_dir, cal_type, cal_data):
     if isinstance(cal_data, np.ndarray):
         cal_data = arr_to_csv_str(cal_data)
-
-    prev_cal_data = load_cal(output_dir)
+    
+    try:
+        prev_cal_data = load_cal(output_dir)
+    except FileNotFoundError:
+        prev_cal_data = {}
     prev_cal_data[cal_type] = cal_data
     
     with open(output_dir, 'w') as json_file:
@@ -218,19 +221,3 @@ def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     
     #inserts columns in original dataframe
     df_data.loc[:,sensor_cols] = yhat
-
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("port")
-    parser.add_argument('--output_dir', '-o', default=None)
-
-    args = parser.parse_args()
-    
-    output_dir = args.output_dir
-    df_data = data_input_main(args.port, plot_magnetometer_3D, 10)
-    
-    if output_dir:
-        save_to_csv(df_data, ["xMag", "yMag", "zMag"], output_dir)
-    
-if __name__ == "__main__":
-    main()

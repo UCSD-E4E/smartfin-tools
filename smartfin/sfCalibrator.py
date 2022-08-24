@@ -42,10 +42,7 @@ def main():
         filename, file_ext = os.path.splitext(args.data_fp)
         output_dir = "{}_cal{}".format(filename, file_ext)
         
-    df_data.to_csv(output_dir, index=False)
-    
+    df_data.to_csv(output_dir, index=False) 
     
 if __name__ == "__main__":
     main()
-    
-    
