@@ -3,6 +3,8 @@ from base64 import b85decode
 from pathlib import Path
 import shutil
 
+import os
+
 import pandas as pd
 
 import decoder as scd
@@ -41,7 +43,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('input')
     parser.add_argument('--input_type', default=None, nargs=1, choices=['sfr', 'sfp'])
-    parser.add_argument('output')
+    parser.add_argument('--output_fp', '-o', default=None)
     parser.add_argument('--output_type', default=None, nargs=1, choices=['sfp', 'csv'])
     parser.add_argument('--no_strip_padding', action='store_true')
 
@@ -60,7 +62,14 @@ def main():
     else:
         input_type = args.input_type
 
-    output_file = Path(args.output)
+    
+    if args.output_fp:
+        fp = args.output_fp
+    else:
+        fp = "{}.csv".format(os.path.splitext(args.input)[0])
+        
+    output_file = Path(fp)
+    
     if args.output_type == None:
         if output_file.suffix.lower() == '.sfp':
             output_type = 'sfp'
