@@ -85,7 +85,7 @@ def createMatrices(df, mag_field):
     return A_1, b
 
 def cal_mag_main(port_p):
-    df = data_input_main(port_p, plot_magnetometer_3D).loc[:,MAG_COLS] #real time input
+    df = data_input_main(port_p, plot_magnetometer_3D).loc[:,MAG_COLS].dropna().astype(np.float) #real time input
     hard_iron, soft_iron = createMatrices(df, MFIELD)
     
     coef_ = hard_iron
