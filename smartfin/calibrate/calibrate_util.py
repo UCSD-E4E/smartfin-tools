@@ -50,7 +50,7 @@ class data_input_thread(threading.Thread):
 def monitor_sensors(port: serial.Serial, df_data, run_event, period):
     start_time = None
     while run_event.is_set():
-        data = port.readline().decode(errors='ignore')
+        data = port.read_until("\r".encode()).decode(errors='ignore')
         parsed_data = np.fromstring(data, dtype=float, sep='\t')
 
         if (parsed_data.size == len(DATA_COLUMNS)):
