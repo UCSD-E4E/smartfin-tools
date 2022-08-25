@@ -22,13 +22,13 @@ optional arguments:
 `sfPlotter` plots the data streams from `.sfr` files.
 ```
 sfPlotter --help
-usage: Smartfin Data Plotter [-h] [sfr_file] [output]
+usage: Smartfin Data Plotter [-h] [csv_fp] [output]
 
 positional arguments:
-  sfr_file
+  csv_fp
   output
 
-optional arguments:
+options:
   -h, --help  show this help message and exit
 ```
 
