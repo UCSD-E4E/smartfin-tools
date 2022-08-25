@@ -50,7 +50,7 @@ def download_data(delete: bool, port: serial.Serial, files: List[str]):
                 continue
             elif data == 'End of Directory\n':
                 break
-            elif data == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit\n':
+            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit':
                 continue
             elif data == '':
                 continue
@@ -60,7 +60,7 @@ def download_data(delete: bool, port: serial.Serial, files: List[str]):
             elif data == ':>':
                 break
             else:
-                port.write('X\r'.encode())
+                discoverAndReset(port)
                 raise RuntimeError("Unknown state")
         if data == 'End of Directory\n':
             break

@@ -40,6 +40,15 @@ def plotFile(fileName:str, output_dir:str)->str:
     plt.grid()
     plt.savefig(os.path.join(output_dir, "WaterDetect.png"))
     plt.close()
+
+    plt.scatter(df['timestamp'], df['dataType'])
+    plt.xlabel('Time (s)')
+    plt.ylabel('Data Type')
+    plt.title('Data Types')
+    plt.grid()
+    plt.savefig(os.path.join(outputDir, "DataTypes.png"))
+    plt.close()
+    
     if "X Acceleration" in df.columns:
         plt.scatter(df['timestamp'], df['X Acceleration'])
         plt.xlabel('Time (s)')
