@@ -7,9 +7,9 @@ from cli_util import drop_into_cli
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("port")
-    parser.add_argument('--delete', '-d', action="store_true")
-    parser.add_argument('--output_dir', '-o', default='.')
+    parser.add_argument("port", help="path to serial port of fin")
+    parser.add_argument('--delete', '-d', action="store_true", help="files deleted from fin if set")
+    parser.add_argument('--output_dir', '-o', default='.', help="output directory to put downloaded sfr files (default: current directory)")
 
     args = parser.parse_args()
     delete = args.delete

@@ -46,7 +46,7 @@ def plotFile(fileName:str, output_dir:str)->str:
     plt.ylabel('Data Type')
     plt.title('Data Types')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "DataTypes.png"))
+    plt.savefig(os.path.join(output_dir, "DataTypes.png"))
     plt.close()
     
     if "X Acceleration" in df.columns:
@@ -281,8 +281,8 @@ def plotHeadings(heading_arr, timestamps, output_dir):
         
 def main():
     parser = argparse.ArgumentParser("Smartfin Data Plotter")
-    parser.add_argument('csv_fp', default=None, nargs='?')
-    parser.add_argument('output', default=None, nargs='?')
+    parser.add_argument('csv_fp', default=None, nargs='?', help="filepath to csv being plotted")
+    parser.add_argument('--output', '-o', default=None, nargs='?', help="output directory to store graphs to (default: {csv_filename}_plts)")
     args = parser.parse_args()
     
     if args.csv_fp:

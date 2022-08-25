@@ -28,9 +28,9 @@ def calibrate_main(input_dir, df_data):
     
 def main():
     parser = ArgumentParser()
-    parser.add_argument("data_fp")
-    parser.add_argument("coef_fp")
-    parser.add_argument("--output_dir", "-o", default=None)
+    parser.add_argument("data_fp", help="filepath to csv datafile")
+    parser.add_argument("coef_fp", help="filepath to json coefficients file")
+    parser.add_argument("--output_dir", "-o", default=None, help="output directory to save calibrated data to (default: {data_filename}_cal.csv)")
 
     args = parser.parse_args()
     
