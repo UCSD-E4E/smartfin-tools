@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
-import smartfin.decoder
+import decoder
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,24 +10,17 @@ import glob
 import argparse
 
 def plotFile(fileName:str, output_dir:str)->str:
-    ensembles = []
-    with open(fileName, 'r') as dataFile:
-        for line in dataFile:
-            ensembles.extend(smartfin.decoder.decodeRecord(line.strip()))
-
-    df = pd.DataFrame(ensembles)
-    df = smartfin.decoder.convertToSI(df)
+    df = pd.read_csv(fileName)
     
-    outputDir = Path(output_dir, os.path.splitext(fileName)[0]).as_posix()
-    if not os.path.exists(outputDir):
-        os.mkdir(outputDir)
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
     plt.scatter(df.index, df['timestamp'])
     plt.xlabel('Ensemble Number by decode order')
     plt.ylabel('Timestamp (s)')
     plt.title('Time vs Ensemble Number')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, 'EnsembleNumber.png'))
+    plt.savefig(os.path.join(output_dir, 'EnsembleNumber.png'))
     plt.close()
 
     plt.scatter(df['timestamp'], df['Temperature'])
@@ -35,7 +28,7 @@ def plotFile(fileName:str, output_dir:str)->str:
     plt.ylabel('Temperature (C)')
     plt.title("Temperature vs Time")
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "Temperature.png"))
+    plt.savefig(os.path.join(output_dir, "Temperature.png"))
     plt.close()
 
     plt.scatter(df['timestamp'], df['Water Detect'])
@@ -43,7 +36,7 @@ def plotFile(fileName:str, output_dir:str)->str:
     plt.ylabel('Water Detect Reading')
     plt.title('Water Detect Reading')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "WaterDetect.png"))
+    plt.savefig(os.path.join(output_dir, "WaterDetect.png"))
     plt.close()
     if "X Acceleration" in df.columns:
         plt.scatter(df['timestamp'], df['X Acceleration'])
@@ -51,7 +44,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Acceleration (g)')
         plt.title('X Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_x.png'))
+        plt.savefig(os.path.join(output_dir, 'Acceleration_x.png'))
         plt.close()
 
     if "Y Acceleration" in df.columns:
@@ -60,7 +53,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Acceleration (g)')
         plt.title('Y Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_y.png'))
+        plt.savefig(os.path.join(output_dir, 'Acceleration_y.png'))
         plt.close()
 
     if "Z Acceleration" in df.columns:
@@ -69,7 +62,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Acceleration (g)')
         plt.title('Z Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_z.png'))
+        plt.savefig(os.path.join(output_dir, 'Acceleration_z.png'))
         plt.close()
 
     if "X Angular Velocity" in df.columns:
@@ -78,7 +71,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('X Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_x.png'))
+        plt.savefig(os.path.join(output_dir, 'AngularVel_x.png'))
         plt.close()
 
     if "Y Angular Velocity" in df.columns:
@@ -87,7 +80,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Y Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_y.png'))
+        plt.savefig(os.path.join(output_dir, 'AngularVel_y.png'))
         plt.close()
 
     if "Z Angular Velocity" in df.columns:
@@ -96,7 +89,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Z Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_z.png'))
+        plt.savefig(os.path.join(output_dir, 'AngularVel_z.png'))
         plt.close()
 
     if "X Magnetic Field" in df.columns:
@@ -105,7 +98,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('X Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_x.png'))
+        plt.savefig(os.path.join(output_dir, 'Magfield_x.png'))
         plt.close()
 
     if "Y Magnetic Field" in df.columns:
@@ -114,7 +107,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Y Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_y.png'))
+        plt.savefig(os.path.join(output_dir, 'Magfield_y.png'))
         plt.close()
 
     if "Z Magnetic Field" in df.columns:
@@ -123,7 +116,7 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Z Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_z.png'))
+        plt.savefig(os.path.join(output_dir, 'Magfield_z.png'))
         plt.close()
 
     if "battery" in df.columns:
@@ -132,18 +125,18 @@ def plotFile(fileName:str, output_dir:str)->str:
         plt.ylabel('Battery Voltage (mV)')
         plt.title('Battery Voltage')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Battery.png'))
+        plt.savefig(os.path.join(output_dir, 'Battery.png'))
         plt.close()
 
 
 def main():
     parser = argparse.ArgumentParser("Smartfin Data Plotter")
-    parser.add_argument('sfr_file', default=None, nargs='?')
-    parser.add_argument('output', default='.', nargs='?')
+    parser.add_argument('csv_fp', default=None, nargs='?')
+    parser.add_argument('output', default=None, nargs='?')
     args = parser.parse_args()
-    output_dir = args.output
-    if args.sfr_file:
-        path = args.sfr_file
+    
+    if args.csv_fp:
+        path = args.csv_fp
     else:
         print("Enter path:")
         path = input()
@@ -152,6 +145,11 @@ def main():
         print("Not a file!")
         return
     print("Graphing %s" % path)
+    
+    if args.output:
+        output_dir = args.output
+    else:
+        output_dir = "{}_plts".format(os.path.splitext(args.csv_fp)[0])
     plotFile(path, output_dir)
 
 if __name__ == "__main__":
