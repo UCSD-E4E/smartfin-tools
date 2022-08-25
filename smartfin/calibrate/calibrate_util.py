@@ -221,3 +221,43 @@ def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     
     #inserts columns in original dataframe
     df_data.loc[:,sensor_cols] = yhat
+    
+def cal_board_set(port_p, input_dir):
+    cal_dict_str = load_cal(input_dir)
+    cal_dict_arr = {key: csv_str_to_arr(cal_dict_str[key]) for key in cal_dict_str} #all arrays are 2D
+    
+    cal_data = cal_dict_arr["acc_coeff"]
+    cal_data = cal_data.flatten()
+    logging.info(cal_data)
+    
+    cal_dict_arr = {key: [int(float_to_bin(element), 2) for element in cal_dict_arr[key].flatten()] for key in cal_dict_arr}
+    logging.info(cal_dict_arr)
+    
+    #converts each float to binary then unsigned 32 bit int seperated by space
+    #cal_conv = [bin_to_float((bin(int(num))[2:]).zfill(32)) for num in cal_data]
+    #logging.info(cal_conv)
+
+    logging.info("keys: {}".format(cal_dict_arr.keys()))
+    with serial.Serial(port=port_p, baudrate=115200) as port:
+        port.timeout = 1
+        drop_into_cli(port)
+        
+        port.write('~\r'.encode())
+        while True:
+            line = port.readline().decode(errors='ignore').rstrip('\n')
+            print(line)
+            if (line == "press enter to start"):
+                port.write("\r".encode())
+            elif (line in CAL_COEFFS):
+                cal_data = cal_dict_arr[line]
+                
+                for coeff_ in cal_data:
+                    port.write("{}\r".format(coeff_).encode())
+                    
+                port.write("\r".format(coeff_).encode())
+            elif (line == "Unknown command"):
+                break
+            else:
+                continue
+        port.write('X\r'.encode())
+
