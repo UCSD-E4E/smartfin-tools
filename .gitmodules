@@ -1,3 +1,0 @@
-[submodule "magnetometer_calibration"]
-	path = magnetometer_calibration
-	url = https://github.com/agard111/magnetometer_calibration
