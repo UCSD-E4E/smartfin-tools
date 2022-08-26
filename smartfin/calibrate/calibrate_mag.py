@@ -109,8 +109,8 @@ def cal_mag_main(port_p):
     
 def main():
     parser = ArgumentParser()
-    parser.add_argument("port")
-    parser.add_argument('--output_dir', '-o', default="calibrations.json")
+    parser.add_argument("port", help="path to serial port of fin")
+    parser.add_argument('--output_dir', '-o', default="calibrations.json", help="json file to output calibration coefficients to (default: calibrations.json)")
 
     args = parser.parse_args()
     output_dir = args.output_dir

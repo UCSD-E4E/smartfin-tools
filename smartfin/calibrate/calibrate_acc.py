@@ -57,9 +57,9 @@ def cal_acc_main(port_p, cal_period):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("port")
-    parser.add_argument('--output_dir', '-o', default="calibrations.json")
-    parser.add_argument('--cal_per', '-p', default=DEFAULT_CAL_PERIOD)
+    parser.add_argument("port", help="path to serial port of fin")
+    parser.add_argument('--output_dir', '-o', default="calibrations.json", help="json file to output calibration coefficients to (default: calibrations.json)")
+    parser.add_argument('--cal_per', '-p', default=DEFAULT_CAL_PERIOD, help="calibration period per orientation (s) (default: {})".format(DEFAULT_CAL_PERIOD))
 
     args = parser.parse_args()
     output_dir = args.output_dir
