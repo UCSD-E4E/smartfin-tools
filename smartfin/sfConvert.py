@@ -1,18 +1,18 @@
 from argparse import ArgumentParser
-from base64 import b85decode
+from base64 import b85decode, urlsafe_b64decode
 from pathlib import Path
 import shutil
-
+from typing import Callable
 import pandas as pd
 
 import smartfin.decoder as scd
 
 
-def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False):
+def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
     with open(in_sfr, 'r') as sfr:
         with open(out_sfp, 'wb') as sfp:
             for record in sfr:
-                packet = b85decode(record.strip())
+                packet = decoder(record.strip())
                 if not no_strip_padding:
                     packet = scd.stripPadding(packet)
                 sfp.write(packet)
