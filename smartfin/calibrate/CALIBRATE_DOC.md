@@ -1,5 +1,5 @@
 # sf-calibrate-tools
-calibration tools
+calibration tools -- working for fw v2.0.0.11
 
 # calibrate_acc
 `calibrate_acc` calibrates the accelerometer. Can specify what json file to save calibration to and how long calibration period is for each axii. Calibration is performed by holding fin still in all 6 orientations.
