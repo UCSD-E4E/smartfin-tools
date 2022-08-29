@@ -29,6 +29,16 @@ MAG_COLS = ["xMag", "yMag", "zMag"]
 THERMAL_COLS = ["temp"]
 
 class data_input_thread(threading.Thread):
+    """
+    This class defines the data collection thread for live data plotting.
+    
+    Attributes:
+        threadID (string): ID of thread.
+        port (serial.Serial): Serial port of fin.
+        run_event (threading.Event).
+        df_data (DataFrame): DataFrame to store data in.
+        period (float): Data collection period.
+    """
     def __init__(self, threadID, port, run_event, df_data, period):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -48,6 +58,17 @@ class data_input_thread(threading.Thread):
         exit_monitor_sensors(self.port)
 
 def monitor_sensors(port: serial.Serial, df_data, run_event, period):
+    """
+    Collects data from fin at fastest rate possible.
+    
+    Stores data into DataFrame in place.
+    
+    Parameters:
+    port (serial.Serial): Serial port of fin.
+    df_data (DataFrame): DataFrame to store data into.
+    run_event (threading.Event).
+    period (float): Data collection period.
+    """
     start_time = None
     while run_event.is_set():
         data = port.read_until("\r".encode()).decode(errors='ignore')
@@ -65,6 +86,7 @@ def monitor_sensors(port: serial.Serial, df_data, run_event, period):
             df_data.loc[df_data.shape[0],:] = parsed_data
 
 def exit_monitor_sensors(port):
+    """Exits monitor sensors on fin."""
     port.write(chr(27).encode()) #exits monitor sensors
     while True:
         data = port.readline().decode(errors='ignore')
@@ -73,9 +95,11 @@ def exit_monitor_sensors(port):
         port.write('X\r'.encode()) #Exits CLI Mode
 
 def split_data(df, cols):
+    """Returns list of columns in df with headers in cols."""
     return [df.loc[:,col] for col in cols]
 
 def axis_to_idx(axis):
+    """Returns index corresponding to axis of data."""
     if (axis == "x"):
         return 0
     if (axis == "y"):
@@ -86,6 +110,16 @@ def axis_to_idx(axis):
 
 
 def plot_magnetometer_3D(df, title=None, real_time=True):
+    """
+    Plots magnetometer data in 3D space.
+    
+    Generates 1 plot: xyz.
+    
+    Parameters:
+    df (DataFrame): Data.
+    title (string): Title of plot. Default is None.
+    real_time (boolean): Whether to update in real time. Default is True.
+    """
     x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
 
     ax = plt.axes(projection='3d')
@@ -103,6 +137,16 @@ def plot_magnetometer_3D(df, title=None, real_time=True):
         plt.show()
 
 def plot_magnetometer_2D(df, title=None, real_time=True):
+    """
+    Plots magnetometer data in 2D space.
+    
+    Generates 3 plots: xy, yz, and zx.
+    
+    Parameters:
+    df (DataFrame): Data.
+    title (string): Title of plot. Default is None
+    real_time (boolean): Whether to update in real time. Default is True
+    """
     x, y, z = tuple(split_data(df, ["xMag", "yMag", "zMag"]))
 
     plt.scatter(x, y, c='blue', label='xy')
@@ -120,6 +164,16 @@ def plot_magnetometer_2D(df, title=None, real_time=True):
         plt.show()
 
 def plot_time_series(df, cols, ylim=None, xlim = None, title=None):
+    """
+    Plots time series data in real time.
+    
+    Parameters:
+    df (DataFrame): Data.
+    cols (array like of strings): Columns to plot.
+    ylim (array like of floats): Lower limit and upper limit of y axis. Default is None.
+    xlim (array like of floats): Lower limit and upper limit of x axis. Default is None.
+    title (string): Title of plot. Default is None.
+    """
     data = split_data(df, ["time"] + cols)
     fig, axis = plt.subplots(1, 3, figsize=(12,4))
     
@@ -136,15 +190,31 @@ def plot_time_series(df, cols, ylim=None, xlim = None, title=None):
     plt.close(fig)
     
 def plot_accelerometer(df):
+    """Plots accelerometer data in real time."""
     plot_time_series(df, ["xAcc", "yAcc", "zAcc"], ylim=(-2, 2))
     
 def plot_gyroscope(df):
+    """Plots gyroscope data in real time"""
     plot_time_series(df, ["xAng", "yAng", "zAng"])
     
 def save_to_csv(df, fields, fp):
+    """Saves fields from df to fp in csv format"""
     df.loc[:,fields].to_csv(fp, index=False, header=False)
     
 def data_input_main(port_p, plotter, period=None):
+    """
+    Real time data plotting and collection from fin at fastest rate supported.
+    
+    Plotting/collection can be stopped with Keyboard Interrupt (Ctrl-C).
+    
+    Parameters:
+    port_p (string): Path to fin's serial port.
+    plotter (func): Plotting function.
+    period (float): Data collection period. If none, data collection/plotting is stopped with Keyboard Interrupt.
+    
+    Returns:
+    Pandas DataFrame: Dataframe of all data collected.
+    """
     run_event = threading.Event()
     run_event.set()
     
@@ -168,12 +238,33 @@ def data_input_main(port_p, plotter, period=None):
             return df_data
 
 def load_cal(input_dir):
+    """
+    Loads calibrations from json file.
+    
+    Loads calibrations into dictionary of coefficient names mapped to csv strings.
+    
+    Parameters:
+    input_dir (string): Path to file to load calibrations from.
+    
+    Returns:
+    dict of string: string: Dictionary mapping coefficient names to csv string representation of matrices.
+    """
     with open(input_dir, 'r') as json_file:
         prev_cal_data = json.load(json_file)
         
     return prev_cal_data
 
 def save_cal(output_dir, cal_type, cal_data):
+    """
+    Saves calibration to json file.
+    
+    Matrices and vectors are saved in csv format.
+    
+    Parameters:
+    output_dir (string): Path to json file to save calibrations in. Automatically creates new json file if output_dir does not exist.
+    cal_type (string): Calibration coefficient name (gyro_intercept, acc_coeff, ...).
+    cal_data (ndarray or string): Csv string or ndarray to save.
+    """
     if isinstance(cal_data, np.ndarray):
         cal_data = arr_to_csv_str(cal_data)
     
@@ -187,18 +278,53 @@ def save_cal(output_dir, cal_type, cal_data):
         json.dump(prev_cal_data, json_file)
 
 def arr_to_csv_str(arr):
+    """
+    Converts ndarray to csv string.
+    
+    For loading calibration coefficients to json file (stored in csv format).
+    
+    Parameters:
+    arr (ndarray): Ndarray to be converted.
+    
+    Returns:
+    string: Csv string representation of arr.
+    """
     return "\n".join([",".join([str(element) for element in row]) if arr.ndim > 1 else str(row) for row in arr])
 
 def csv_str_to_arr(csv_str):
+    """
+    Converts csv string to ndarray.
+    
+    For loading calibration coefficients from json file (stored in csv format).
+    
+    Parameters:
+    csv_str (string): String in csv format to be converted.
+    
+    Returns:
+    ndarray: NumPy array representation of csv_str.
+    """
     return np.array([[float(element) for element in row.split(",")] for row in csv_str.split('\n')])
 
 def float_to_bin(num):
+    """Returns binary string representation of num for loading calibration coefficients onto board."""
     return format(struct.unpack('!I', struct.pack('!f', num))[0], '032b')
 
 def bin_to_float(binary):
+    """Returns floating point representation of binary for loading calibration coefficients from board."""
     return struct.unpack('!f',struct.pack('!I', int(binary, 2)))[0]
 
 def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
+    """
+    Applies calibration to sensor data.
+    
+    Assume linear regression model.
+    
+    Parameters:
+    sensor_name (string): Name of sensor (acc, gyro, mag, thermal).
+    sensor_cols (array like of strings): Headers of data columns to be calibrated.
+    cal_data_dict (dict of str: ndarray): Dictionary mapping coefficient name ({sensor_name}_coeff, {sensor_name}_intercept) to matrices. Can also be str: float mapping coefficient name to coefficient if one dimensional.
+    df_data (pandas DataFrame): DataFrame of data to be calbirated.
+    """
     coeff_key = "{}_coeff".format(sensor_name)
     intercept_key = "{}_intercept".format(sensor_name)
     if coeff_key not in cal_data_dict and intercept_key not in cal_data_dict:
@@ -223,6 +349,16 @@ def calibrate_main_sensor(sensor_name, sensor_cols, cal_data_dict, df_data):
     df_data.loc[:,sensor_cols] = yhat
     
 def cal_board_set(port_p, input_dir):
+    """
+    Loads calibration coefficients onto board.
+    
+    Stores floats as unsigned 32 bit ints on board. Working with Smartfin 
+    FW v2.0.0.10store_cal
+    
+    Parameters:
+    port_p (string): Path to fin's serial port
+    input_dir (string): Path to json file storing calibration coefficients
+    """
     cal_dict_str = load_cal(input_dir)
     cal_dict_arr = {key: csv_str_to_arr(cal_dict_str[key]) for key in cal_dict_str} #all arrays are 2D
     
