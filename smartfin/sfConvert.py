@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from base64 import b85decode, urlsafe_b64decode
+import base64
 from pathlib import Path
 import shutil
 from typing import Callable
@@ -17,11 +18,11 @@ def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False, *, decod
                     packet = scd.stripPadding(packet)
                 sfp.write(packet)
 
-def sfrToCsv(in_sfr: Path, out_csv: Path):
+def sfrToCsv(in_sfr: Path, out_csv: Path, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
     ensembles = []
     with open(in_sfr, 'r') as sfr:
         for record in sfr:
-            ensembles.extend(scd.decodeRecord(record.strip()))
+            ensembles.extend(scd.decodeRecord(record.strip(), decoder=decoder))
     
     df = pd.DataFrame(ensembles)
     df = scd.convertToSI(df)
@@ -44,6 +45,7 @@ def main():
     parser.add_argument('output')
     parser.add_argument('--output_type', default=None, nargs=1, choices=['sfp', 'csv'])
     parser.add_argument('--no_strip_padding', action='store_true')
+    parser.add_argument('-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url', nargs=1)
 
     args = parser.parse_args()
     input_file = Path(args.input)
@@ -73,13 +75,22 @@ def main():
 
     if input_type == output_type:
         shutil.copy(input_file, output_file)
+
+    if args.encoding == 'base64url':
+        decoder = base64.urlsafe_b64decode
+    elif args.encoding == 'base64':
+        decoder = base64.b64decode
+    elif args.encoding == 'base85':
+        decoder = base64.b85decode
+    else:
+        raise NotImplementedError(f"Unknown encoding {args.encoding}")
     
     if input_type == 'sfr' and output_type == 'sfp':
-        sfrToSfp(input_file, output_file, no_strip_padding=args.no_strip_padding)
+        sfrToSfp(input_file, output_file, no_strip_padding=args.no_strip_padding, decoder=decoder)
     elif input_type == 'sfp' and output_type == 'csv':
         sfpToCsv(input_file, output_file)
     elif input_type == 'sfr' and output_type == 'csv':
-        sfrToCsv(input_file, output_file)
+        sfrToCsv(input_file, output_file, decoder=decoder)
     else:
         raise RuntimeError("Unknown conversion")
 

@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-import smartfin.decoder
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import glob
 import argparse
+import base64
+import os
+from pathlib import Path
+from typing import Callable
 
-def plotFile(fileName:str, output_dir:str)->str:
+import matplotlib.pyplot as plt
+import pandas as pd
+
+import smartfin.decoder
+
+
+def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode)->str:
     ensembles = []
     with open(fileName, 'r') as dataFile:
         for line in dataFile:
@@ -149,6 +152,7 @@ def main():
     parser = argparse.ArgumentParser("Smartfin Data Plotter")
     parser.add_argument('sfr_file', default=None, nargs='?')
     parser.add_argument('output', default='.', nargs='?')
+    parser.add_argument('-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url', nargs=1)
     args = parser.parse_args()
     output_dir = args.output
     if args.sfr_file:
@@ -161,7 +165,17 @@ def main():
         print("Not a file!")
         return
     print("Graphing %s" % path)
-    plotFile(path, output_dir)
+
+    if args.encoding == 'base64url':
+        decoder = base64.urlsafe_b64decode
+    elif args.encoding == 'base64':
+        decoder = base64.b64decode
+    elif args.encoding == 'base85':
+        decoder = base64.b85decode
+    else:
+        raise NotImplementedError(f"Unknown encoding {args.encoding}")
+
+    plotFile(path, output_dir, decoder=decoder)
 
 if __name__ == "__main__":
     main()
