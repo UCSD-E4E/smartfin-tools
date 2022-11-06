@@ -13,7 +13,8 @@ setup(
     entry_points={
         'console_scripts': [
             'smartfinDownloader = smartfin.smartfinDownloader:main',
-            'sfDownloader = smartfin.sfDownloader:main',
+            'sfDownloader = smartfin.sfDownloader:sfDownloader',
+            'sfFlogDownloader = smartfin.sfDownloader:flogDownloader',
             'sfPlotter = smartfin.sfPlotter:main',
             'sfConvert = smartfin.sfConvert:main',
         ]

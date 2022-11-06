@@ -25,7 +25,7 @@ def discoverAndReset(port:serial.Serial):
     else:
         raise RuntimeError("Unknown state")
 
-def main():
+def sfDownloader():
     parser = ArgumentParser()
     parser.add_argument("port")
     parser.add_argument('--delete', '-d', action="store_true")
@@ -55,6 +55,23 @@ def main():
                     f.write(line)
                     f.write('\n')
         print(f'Downloaded {len(base85data)} files')
+
+def flogDownloader():
+    parser = ArgumentParser()
+    parser.add_argument('port')
+    parser.add_argument('output_file', default='flog.txt')
+    parser.add_argument('--clear', '-c', action='store_true')
+    
+    args = parser.parse_args()
+    clear = args.clear
+    output_file = args.output_file
+    portname = args.port
+
+    with serial.Serial(port=portname, baudrate=115200) as port:
+        port.timeout = 1
+        drop_into_cli(port)
+        download_flog(clear, port, Path(output_file))
+        port.write('D\r'.encode())
 
 def download_data(delete: bool, port: serial.Serial, files: List[str]):
     # Download files
@@ -146,5 +163,38 @@ def drop_into_cli(port: serial.Serial):
         elif data.decode(errors='ignore') == '>':
             break
 
+def download_flog(clear: bool, port: serial.Serial, output_path: Path):
+    port.write('*\r'.encode())
+    while True:
+        line = port.readline().decode(errors='ignore').strip()
+        if line == '*>':
+            break
+    port.write('11\r'.encode())
+    port.readline() # Throwing away echo
+    port.readline() # Throwing away title
+    with open(output_path, 'w') as output:
+        while True:
+            line = port.readline().decode(errors='ignore')
+            if line.strip() != '':
+                output.write(line)
+            else:
+                break
+    while True:
+        line = port.readline().decode(errors='ignore').strip()
+        if line == '*>':
+            break
+
+    if clear:
+        port.write('12\r'.encode())
+        while True:
+            line = port.readline().decode(errors='ignore').strip()
+            if line == '*>':
+                break
+    port.write('0\r'.encode())
+    while True:
+        line = port.readline().decode(errors='ignore').strip()
+        if line == '>':
+            break
+
 if __name__ == "__main__":
-    main()
+    flogDownloader()
