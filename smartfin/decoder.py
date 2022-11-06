@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 import struct
 import base64
-from typing import Dict, List, Union
+from typing import Callable, Dict, List, Union
 import pandas as pd
 import numpy as np
 import logging
 
-def decodeRecord(record: str) -> List[Dict[str, Union[int, float]]]:
+def decodeRecord(record: str, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode) -> List[Dict[str, Union[int, float]]]:
     logger = logging.getLogger("Smartfin Decoder")
-    if len(record) % 5 != 0:
-        logger.warning("Record does not contain a multiple of 5 characters!")
-    packet = base64.b85decode(record)
+    packet = decoder(record)
     return decodePacket(packet)
 
 

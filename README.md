@@ -16,6 +16,7 @@ optional arguments:
   --input_type {sfr,sfp}
   --output_type {sfp,csv}
   --no_strip_padding
+  -e {base85,base64,base64url}, --encoding {base85,base64,base64url}
 ```
 
 # sfPlotter
@@ -30,6 +31,7 @@ positional arguments:
 
 optional arguments:
   -h, --help  show this help message and exit
+  -e {base85,base64,base64url}, --encoding {base85,base64,base64url}
 ```
 
 # sfDownloader
