@@ -42,6 +42,8 @@ def main():
         files = get_files(port)
         print(files)
 
+        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+
         base85data = download_data(delete, port, files)
             
         port.write('D\r'.encode())
@@ -56,11 +58,12 @@ def main():
                     f.write('\n')
         print(f'Downloaded {len(base85data)} files')
 
-def download_data(delete: bool, port: serial.Serial, files: List[str]):
+def download_data(delete: bool, port: serial.Serial, files: List[str]) -> Dict[str, List[str]]:
     # Download files
     port.write('R\r'.encode())
     filename: Optional[str] = None
     base85data: Dict[str, List[str]] = {}
+    format = ''
     while True:
         while True:
             data = port.readline().decode(errors='ignore')
@@ -71,6 +74,13 @@ def download_data(delete: bool, port: serial.Serial, files: List[str]):
             elif data == 'End of Directory\n':
                 break
             elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit':
+                format == 'base85'
+                continue
+            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base64), U to read it out (uint8_t), D to delete, E to exit':
+                format == 'base64'
+                continue
+            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base64url), U to read it out (uint8_t), D to delete, E to exit':
+                format == 'base64url'
                 continue
             elif data == '':
                 continue
