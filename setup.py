@@ -1,9 +1,14 @@
-from setuptools import setup, find_packages
+'''Smartfin Tools setup
+'''
+from setuptools import find_packages, setup
+
+from smartfin import __version__
 
 setup(
     name='smartfin-tools',
     author='UCSD Engineers for Exploration',
     author_email='e4e@eng.ucsd.edu',
+    version=__version__,
     install_requires=[
         'pandas',
         'numpy',
@@ -20,5 +25,13 @@ setup(
             'sfConvert = smartfin.sfConvert:main',
         ]
     },
-    packages=find_packages()
+    packages=find_packages(),
+    extras_require={
+        'dev': [
+            'pytest',
+            'coverage',
+            'pylint',
+            'wheel',
+        ]
+    },
 )
