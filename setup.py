@@ -23,6 +23,7 @@ setup(
             'sfFlogDownloader = smartfin.sfDownloader:flogDownloader',
             'sfPlotter = smartfin.sfPlotter:main',
             'sfConvert = smartfin.sfConvert:main',
+            'sfTempCalibrator = smartfin.temp_calibrator:main',
         ]
     },
     packages=find_packages(),
