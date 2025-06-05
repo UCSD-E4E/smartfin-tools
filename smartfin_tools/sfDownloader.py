@@ -207,4 +207,4 @@ def download_flog(clear: bool, port: serial.Serial, output_path: Path):
             break
 
 if __name__ == "__main__":
-    flogDownloader()
+    sfDownloader()
