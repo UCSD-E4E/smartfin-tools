@@ -41,9 +41,9 @@ def sfpToCsv(in_sfp: Path, out_csv: Path):
 def main():
     parser = ArgumentParser()
     parser.add_argument('input')
-    parser.add_argument('--input_type', default=None, nargs=1, choices=['sfr', 'sfp'])
+    parser.add_argument('--input_type', default=None, choices=['sfr', 'sfp'])
     parser.add_argument('output')
-    parser.add_argument('--output_type', default=None, nargs=1, choices=['sfp', 'csv'])
+    parser.add_argument('--output_type', default=None, choices=['sfp', 'csv'])
     parser.add_argument('--no_strip_padding', action='store_true')
     parser.add_argument('-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url', nargs=1)
 

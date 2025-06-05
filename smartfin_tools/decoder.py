@@ -67,6 +67,11 @@ __parserTable = {
         'fmt': '>hhhhhhhhhhii',
         'len': 28,
         'names': ['temp+water', 'xAcc', 'yAcc', 'zAcc', 'xGyro', 'yGyro', 'zGyro', 'xMag', 'yMag', 'zMag', 'lat', 'lon']
+    },
+    0x0C: {
+        'fmt': '>hhhhhhhhh',
+        'len': 0x12,
+        'names': ['xAcc', 'yAcc', 'zAcc', 'xAng', 'yAng', 'zAng', 'xMag', 'yMag', 'zMag']
     }
 }
 
