@@ -6,7 +6,7 @@ import pandas as pd
 import serial
 from matplotlib import pyplot as plt
 
-from smartfin.decoder import *
+from smartfin_tools.decoder import *
 
 CLI_WAIT = 2
 
