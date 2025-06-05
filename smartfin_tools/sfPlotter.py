@@ -9,17 +9,17 @@ from typing import Callable
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import smartfin.decoder
+import smartfin_tools.decoder
 
 
 def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode)->str:
     ensembles = []
     with open(fileName, 'r') as dataFile:
         for line in dataFile:
-            ensembles.extend(smartfin.decoder.decodeRecord(line.strip()))
+            ensembles.extend(smartfin_tools.decoder.decodeRecord(line.strip()))
 
     df = pd.DataFrame(ensembles)
-    df = smartfin.decoder.convertToSI(df)
+    df = smartfin_tools.decoder.convertToSI(df)
     
     outputDir = Path(output_dir, os.path.splitext(fileName)[0]).as_posix()
     if not os.path.exists(outputDir):

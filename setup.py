@@ -2,7 +2,7 @@
 '''
 from setuptools import find_packages, setup
 
-from smartfin import __version__
+from smartfin_tools import __version__
 
 setup(
     name='smartfin-tools',

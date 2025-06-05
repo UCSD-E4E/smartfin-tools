@@ -6,7 +6,7 @@ import shutil
 from typing import Callable
 import pandas as pd
 
-import smartfin.decoder as scd
+import smartfin_tools.decoder as scd
 
 
 def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
