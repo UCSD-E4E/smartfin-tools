@@ -21,7 +21,6 @@ packages = [
 [tool.poetry]
 
 [tool.poetry.scripts]
-smartfinDownloader = 'smartfin.smartfinDownloader:main'
 sfDownloader = 'smartfin.sfDownloader:sfDownloader'
 sfFlogDownloader = 'smartfin.sfDownloader:flogDownloader'
 sfPlotter = 'smartfin.sfPlotter:main'
