@@ -12,7 +12,8 @@ dependencies = [
     "pandas (>=2.2.3,<3.0.0)",
     "numpy (>=2.2.6,<3.0.0)",
     "pyserial (>=3.5,<4.0)",
-    "matplotlib (>=3.10.3,<4.0.0)"
+    "matplotlib (>=3.10.3,<4.0.0)",
+    "semantic-version (>=2.10.0,<3.0.0)"
 ]
 packages = [
     { include = "smartfin" },
@@ -31,6 +32,7 @@ sfTempCalibrator = 'smartfin.temp_calibrator:main'
 pytest = "^8.4.0"
 autopep8 = "^2.3.2"
 pylint = "^3.3.7"
+isort = "^6.0.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

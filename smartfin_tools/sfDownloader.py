@@ -1,7 +1,13 @@
+'''Smartfin Data Downloader
+'''
+import time
 from argparse import ArgumentParser
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import semantic_version
 import serial
+
 
 def discoverAndReset(port:serial.Serial):
     port.flush()
@@ -29,7 +35,7 @@ def sfDownloader():
     parser = ArgumentParser()
     parser.add_argument("port")
     parser.add_argument('--delete', '-d', action="store_true")
-    parser.add_argument('--output_dir', '-o', default='.')
+    parser.add_argument('--output_dir', '-o', default='./data')
 
     args = parser.parse_args()
     delete = args.delete
@@ -37,26 +43,23 @@ def sfDownloader():
     with serial.Serial(port=args.port, baudrate=115200) as port:
         port.timeout = 1
         drop_into_cli(port)
-        
+
+        set_fcli(port)
         # List files
         files = get_files(port)
         print(files)
 
-        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-        base85data = download_data(delete, port, files)
+        download_data(delete, port, files, output_dir)
             
-        port.write('D\r'.encode())
-
-        for file, data in base85data.items():
-            output_path = Path(args.output_dir, file)
-            output_path = output_path.with_suffix('.sfr').as_posix()
-            print(output_path)
-            with open(output_path, 'w') as f:
-                for line in data:
-                    f.write(line)
-                    f.write('\n')
-        print(f'Downloaded {len(base85data)} files')
+        port.write('q\r'.encode())
+        port.read_until('\n>'.encode())
+        port.write('q\r'.encode())
+        port.read_until('\n>'.encode())
+        port.write('q\r'.encode())
+        port.read_until('\n>'.encode())
 
 def flogDownloader():
     parser = ArgumentParser()
@@ -75,103 +78,75 @@ def flogDownloader():
         download_flog(clear, port, Path(output_file))
         port.write('D\r'.encode())
 
-def download_data(delete: bool, port: serial.Serial, files: List[str]) -> Dict[str, List[str]]:
-    # Download files
-    port.write('R\r'.encode())
-    filename: Optional[str] = None
-    base85data: Dict[str, List[str]] = {}
-    format = ''
-    while True:
-        while True:
-            data = port.readline().decode(errors='ignore')
-            if data == 'R\r\n':
-                continue
-            elif data == 'N\r\n':
-                continue
-            elif data == 'End of Directory\n':
-                break
-            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base85), U to read it out (uint8_t), D to delete, E to exit':
-                format == 'base85'
-                continue
-            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base64), U to read it out (uint8_t), D to delete, E to exit':
-                format == 'base64'
-                continue
-            elif data.strip() == 'Press N to go to next file, C to copy, R to read it out (base64url), U to read it out (uint8_t), D to delete, E to exit':
-                format == 'base64url'
-                continue
-            elif data == '':
-                continue
-            elif data.strip().split()[0] in files:
-                filename = data.split()[0]
-                continue
-            elif data == ':>':
-                break
-            else:
-                discoverAndReset(port)
-                raise RuntimeError("Unknown state")
-        if data == 'End of Directory\n':
-            break
 
-        port.write('R\r'.encode())
-        while True:
-            data = port.readline().decode(errors='ignore')
-            if data == 'R\r\n':
-                continue
-            elif data == 'N\r\n':
-                continue
-            elif data.startswith('Publish Header'):
-                output_filename = data.split()[-1]
-                continue
-            elif data.strip() == '':
-                continue
-            elif data.strip().endswith('chars of base85 data'):
-                continue
-            elif data.strip().endswith('packets'):
-                continue
-            elif data == ':>':
-                if delete == True:
-                    port.write('D\r'.encode())
-                    while True:
-                        data = port.readline().decode()
-                        if data == ':>':
-                            break
-                port.write('N\r'.encode())
-                break
-            else:
-                    # this is file data
-                if output_filename in base85data:
-                    base85data[output_filename].append(data.strip())
-                else:
-                    base85data[output_filename] = [data.strip()]
-    port.write('E\r'.encode())
-    return base85data
+def download_data(delete: bool, port: serial.Serial, files: List[str], output_dir: Path) -> Dict[str, List[str]]:
+    for file in files:
+        port.write('d\r'.encode())
+        response = port.read_until('dump: '.encode()).decode().splitlines()
+        direntry_list = {row[1].strip(): int(row[0]) for row in (
+            entry.split(': ') for entry in response[1:-1])}
+        direntry_idx = direntry_list[file]
+
+        port.write(f'{direntry_idx}\r'.encode())
+        port.read_until(f'{file}\n'.encode())
+
+        encoded_data = port.read_until(f'\n\n'.encode()).decode()
+
+        footer = port.read_until('\n:>'.encode())
+
+        with open((output_dir / file).with_suffix('.sfr'), 'w', encoding='utf-8') as handle:
+            handle.write(encoded_data.strip())
 
 def get_files(port: serial.Serial):
-    files: List[str] = []
-    port.write('L\r'.encode())
-    while True:
-        data = port.readline().decode(errors='ignore')
-        if data == '>':
-            break
-        elif data == 'L\r\n':
-            continue
-        files.append(data.split()[0])
+
+    # cd into data
+    port.write('c\r'.encode())
+    response = port.read_until('to: '.encode()).decode().splitlines()
+
+    dir_list = {
+        entry[1].strip(): int(entry[0])
+        for entry in (line.split(': ')
+                      for line in response[3:-2])
+    }
+
+    dir_entry = dir_list['data']
+    port.write(f'{dir_entry}\r'.encode())
+    response = port.read_until('\n:>'.encode())
+
+    # List dir
+    port.write('l\r'.encode())
+    response = port.read_until('\n:>'.encode()).decode().splitlines()
+
+    files = [entry.split()[-1] for entry in response[3:-1]]
+
     return files
 
+
+def set_fcli(port: serial.Serial):
+    # Enter debug menu
+    port.write('6\r'.encode())
+    port.read_until('\n>'.encode())
+
+    # Enter File CLI
+    port.write('13\r'.encode())
+    port.read_until('\n:>'.encode())
+
 def drop_into_cli(port: serial.Serial):
-    port.write("#CLI\r".encode())
-    data = port.readline()
-    if data.decode(errors="ignore") != "Next State: STATE_CLI\n":
+    port.write("#CLI".encode())
+    time.sleep(0.1)
+    response = port.read_all()
+    if not response:
+        raise RuntimeError("No response from fin!")
+    data = response.decode(errors="ignore")
+    lines = data.splitlines()
+    fw_ver = semantic_version.Version(lines[3].split(' v')[-1])
+    fw_spec = semantic_version.SimpleSpec('^3.14.0')
+    if fw_ver not in fw_spec:
+        port.write('q'.encode())
+        raise RuntimeError(f'Invalid FW version {fw_ver}')
+    if lines[-1] != '>':
         discoverAndReset(port)
         raise RuntimeError("Restart me please")
-        
-        # Wait for '>'
-    while True:
-        data = port.readline()
-        if data.decode(errors='ignore') == '':
-            raise RuntimeError("Unexpected no data!")
-        elif data.decode(errors='ignore') == '>':
-            break
 
 def download_flog(clear: bool, port: serial.Serial, output_path: Path):
     port.write('*\r'.encode())
