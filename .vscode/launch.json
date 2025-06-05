@@ -6,19 +6,18 @@
     "configurations": [
         {
             "name": "SF Downloader - COM4",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "smartfin.sfDownloader",
-            "justMyCode": true,
+            "module": "smartfin_tools.sfDownloader",
             "args": [
                 "COM4"
             ]
         },
         {
             "name": "SF Downloader - COM4/Delete",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
-            "module": "smartfin.sfDownloader",
+            "module": "smartfin_tools.sfDownloader",
             "justMyCode": true,
             "args": [
                 "COM4",
