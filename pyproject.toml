@@ -15,18 +15,16 @@ dependencies = [
     "matplotlib (>=3.10.3,<4.0.0)",
     "semantic-version (>=2.10.0,<3.0.0)"
 ]
-packages = [
-    { include = "smartfin" },
-]
+
 
 [tool.poetry]
 
 [tool.poetry.scripts]
-sfDownloader = 'smartfin.sfDownloader:sfDownloader'
-sfFlogDownloader = 'smartfin.sfDownloader:flogDownloader'
-sfPlotter = 'smartfin.sfPlotter:main'
-sfConvert = 'smartfin.sfConvert:main'
-sfTempCalibrator = 'smartfin.temp_calibrator:main'
+sfDownloader = 'smartfin_tools.sfDownloader:sfDownloader'
+sfFlogDownloader = 'smartfin_tools.sfDownloader:flogDownloader'
+sfPlotter = 'smartfin_tools.sfPlotter:main'
+sfConvert = 'smartfin_tools.sfConvert:main'
+sfTempCalibrator = 'smartfin_tools.temp_calibrator:main'
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
@@ -39,7 +37,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.semantic_release]
-version_variables = ["smartfin/__init__.py:__version__"]
+version_variables = ["smartfin_tools/__init__.py:__version__"]
 version_toml = [
     "pyproject.toml:tool.poetry.version",
 ]
