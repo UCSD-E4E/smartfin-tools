@@ -1,8 +1,5 @@
-#!/usr/bin/env python3
-
 import argparse
 import base64
-import os
 from pathlib import Path
 from typing import Callable
 
@@ -12,25 +9,25 @@ import pandas as pd
 import smartfin_tools.decoder
 
 
-def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode)->str:
+def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode):
     ensembles = []
-    with open(fileName, 'r') as dataFile:
+    with open(fileName, 'r', encoding='utf-8') as dataFile:
         for line in dataFile:
-            ensembles.extend(smartfin_tools.decoder.decodeRecord(line.strip()))
+            ensembles.extend(smartfin_tools.decoder.decodeRecord(
+                line.strip(), decoder=decoder))
 
     df = pd.DataFrame(ensembles)
     df = smartfin_tools.decoder.convertToSI(df)
-    
-    outputDir = Path(output_dir, os.path.splitext(fileName)[0]).as_posix()
-    if not os.path.exists(outputDir):
-        os.mkdir(outputDir)
+
+    plot_dir = output_dir / fileName.stem
+    plot_dir.mkdir(parents=True, exist_ok=True)
 
     plt.scatter(df.index, df['timestamp'])
     plt.xlabel('Ensemble Number by decode order')
     plt.ylabel('Timestamp (s)')
     plt.title('Time vs Ensemble Number')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, 'EnsembleNumber.png'))
+    plt.savefig(plot_dir / 'EnsembleNumber.png')
     plt.close()
 
     plt.scatter(df['timestamp'], df['Temperature'])
@@ -38,7 +35,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
     plt.ylabel('Temperature (C)')
     plt.title("Temperature vs Time")
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "Temperature.png"))
+    plt.savefig(plot_dir / "Temperature.png")
     plt.close()
 
     plt.scatter(df['timestamp'], df['Water Detect'])
@@ -46,7 +43,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
     plt.ylabel('Water Detect Reading')
     plt.title('Water Detect Reading')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "WaterDetect.png"))
+    plt.savefig(plot_dir / "WaterDetect.png")
     plt.close()
 
     plt.scatter(df['timestamp'], df['dataType'])
@@ -54,16 +51,16 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
     plt.ylabel('Data Type')
     plt.title('Data Types')
     plt.grid()
-    plt.savefig(os.path.join(outputDir, "DataTypes.png"))
+    plt.savefig(plot_dir / "DataTypes.png")
     plt.close()
-    
+
     if "X Acceleration" in df.columns:
         plt.scatter(df['timestamp'], df['X Acceleration'])
         plt.xlabel('Time (s)')
         plt.ylabel('Acceleration (g)')
         plt.title('X Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_x.png'))
+        plt.savefig(plot_dir / 'Acceleration_x.png')
         plt.close()
 
     if "Y Acceleration" in df.columns:
@@ -72,7 +69,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Acceleration (g)')
         plt.title('Y Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_y.png'))
+        plt.savefig(plot_dir / 'Acceleration_y.png')
         plt.close()
 
     if "Z Acceleration" in df.columns:
@@ -81,7 +78,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Acceleration (g)')
         plt.title('Z Acceleration')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Acceleration_z.png'))
+        plt.savefig(plot_dir / 'Acceleration_z.png')
         plt.close()
 
     if "X Angular Velocity" in df.columns:
@@ -90,7 +87,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('X Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_x.png'))
+        plt.savefig(plot_dir / 'AngularVel_x.png')
         plt.close()
 
     if "Y Angular Velocity" in df.columns:
@@ -99,7 +96,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Y Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_y.png'))
+        plt.savefig(plot_dir / 'AngularVel_y.png')
         plt.close()
 
     if "Z Angular Velocity" in df.columns:
@@ -108,7 +105,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Z Angular Velocity')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'AngularVel_z.png'))
+        plt.savefig(plot_dir / 'AngularVel_z.png')
         plt.close()
 
     if "X Magnetic Field" in df.columns:
@@ -117,7 +114,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('X Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_x.png'))
+        plt.savefig(plot_dir / 'Magfield_x.png')
         plt.close()
 
     if "Y Magnetic Field" in df.columns:
@@ -126,7 +123,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Y Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_y.png'))
+        plt.savefig(plot_dir / 'Magfield_y.png')
         plt.close()
 
     if "Z Magnetic Field" in df.columns:
@@ -135,7 +132,7 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Z Magnetic Field')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Magfield_z.png'))
+        plt.savefig(plot_dir / 'Magfield_z.png')
         plt.close()
 
     if "battery" in df.columns:
@@ -144,27 +141,28 @@ def plotFile(fileName:str, output_dir:str, *, decoder: Callable[[str], bytes] = 
         plt.ylabel('Battery Voltage (mV)')
         plt.title('Battery Voltage')
         plt.grid()
-        plt.savefig(os.path.join(outputDir, 'Battery.png'))
+        plt.savefig(plot_dir / 'Battery.png')
         plt.close()
 
 
 def main():
-    parser = argparse.ArgumentParser("Smartfin Data Plotter")
-    parser.add_argument('sfr_file', default=None, nargs='?')
-    parser.add_argument('output', default='.', nargs='?')
-    parser.add_argument('-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url', nargs=1)
+    parser = argparse.ArgumentParser('Smartfin Data Plotter')
+    parser.add_argument('sfr_file', default=None, type=Path)
+    parser.add_argument('output', default=Path('.'), type=Path)
+    parser.add_argument(
+        '-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url')
     args = parser.parse_args()
-    output_dir = args.output
+    output_dir: Path = args.output
     if args.sfr_file:
         path = args.sfr_file
     else:
         print("Enter path:")
-        path = input()
-    
-    if not os.path.isfile(path):
+        path = Path(input())
+
+    if not path.is_file():
         print("Not a file!")
         return
-    print("Graphing %s" % path)
+    print(f'Graphing {path.as_posix()}')
 
     if args.encoding == 'base64url':
         decoder = base64.urlsafe_b64decode
@@ -176,6 +174,7 @@ def main():
         raise NotImplementedError(f"Unknown encoding {args.encoding}")
 
     plotFile(path, output_dir, decoder=decoder)
+
 
 if __name__ == "__main__":
     main()

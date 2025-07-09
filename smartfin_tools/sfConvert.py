@@ -45,7 +45,8 @@ def main():
     parser.add_argument('output')
     parser.add_argument('--output_type', default=None, choices=['sfp', 'csv'])
     parser.add_argument('--no_strip_padding', action='store_true')
-    parser.add_argument('-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url', nargs=1)
+    parser.add_argument(
+        '-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url')
 
     args = parser.parse_args()
     input_file = Path(args.input)
