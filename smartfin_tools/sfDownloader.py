@@ -1,5 +1,6 @@
 '''Smartfin Data Downloader
 '''
+import base64
 import time
 from argparse import ArgumentParser
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import Dict, List, Optional
 
 import semantic_version
 import serial
+from tqdm.auto import tqdm
 
 
 def discoverAndReset(port:serial.Serial):
@@ -47,7 +49,6 @@ def sfDownloader():
         set_fcli(port)
         # List files
         files = get_files(port)
-        print(files)
 
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -79,25 +80,46 @@ def flogDownloader():
         port.write('D\r'.encode())
 
 
-def download_data(delete: bool, port: serial.Serial, files: List[str], output_dir: Path) -> Dict[str, List[str]]:
-    for file in files:
-        port.write('d\r'.encode())
+def download_data(delete: bool, port: serial.Serial, files: Dict[str, int], output_dir: Path) -> Dict[str, List[str]]:
+    for file, filesize in files.items():
+        port.write('t\r'.encode())
         response = port.read_until('dump: '.encode()).decode().splitlines()
         direntry_list = {row[1].strip(): int(row[0]) for row in (
             entry.split(': ') for entry in response[1:-1])}
         direntry_idx = direntry_list[file]
 
         port.write(f'{direntry_idx}\r'.encode())
-        port.read_until(f'{file}\n'.encode())
+        header = port.read_until(f'{file}\n'.encode())
+        publish_name = header.decode().splitlines()[1].split(': ')[1]
 
-        encoded_data = port.read_until(f'\n\n'.encode()).decode()
+        encoded_data = ''
+        n_packets = 0
+        bar = tqdm(total=filesize, unit='B', desc=publish_name,
+                   unit_scale=True, unit_divisor=1024)
+        while True:
+            packet = port.read_until('\n'.encode()).decode()
+            encoded_data += packet
+            n_packets += 1
+            bar.update(len(base64.urlsafe_b64decode(packet.strip())))
+            if port.in_waiting == 0:
+                port.write('n'.encode())
+            else:
+                bar.close()
+                break
+
 
         footer = port.read_until('\n:>'.encode())
 
-        with open((output_dir / file).with_suffix('.sfr'), 'w', encoding='utf-8') as handle:
+        expected_packets = int(
+            footer.decode().strip().splitlines()[1].split()[0])
+        if n_packets != expected_packets:
+            raise RuntimeError('Packet count mismatch!')
+
+        with open((output_dir / (publish_name + '.sfr')), 'w', encoding='utf-8') as handle:
             handle.write(encoded_data.strip())
 
-def get_files(port: serial.Serial):
+
+def get_files(port: serial.Serial) -> Dict[str, int]:
 
     # cd into data
     port.write('c\r'.encode())
@@ -117,7 +139,8 @@ def get_files(port: serial.Serial):
     port.write('l\r'.encode())
     response = port.read_until('\n:>'.encode()).decode().splitlines()
 
-    files = [entry.split()[-1] for entry in response[3:-1]]
+    files = {entry.split()[-1]: int(entry.split()[0])
+             for entry in response[3:-1]}
 
     return files
 
@@ -140,7 +163,7 @@ def drop_into_cli(port: serial.Serial):
     data = response.decode(errors="ignore")
     lines = data.splitlines()
     fw_ver = semantic_version.Version(lines[3].split(' v')[-1])
-    fw_spec = semantic_version.SimpleSpec('^3.14.0')
+    fw_spec = semantic_version.SimpleSpec('^3.20.0')
     if fw_ver not in fw_spec:
         port.write('q'.encode())
         raise RuntimeError(f'Invalid FW version {fw_ver}')
