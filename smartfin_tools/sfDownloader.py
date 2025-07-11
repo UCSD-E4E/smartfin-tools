@@ -99,7 +99,8 @@ def download_data(delete: bool, port: serial.Serial, files: Dict[str, int], outp
         while True:
             packet = port.read_until('\n'.encode()).decode()
             encoded_data += packet
-            n_packets += 1
+            if len(packet.strip()) > 0:
+                n_packets += 1
             bar.update(len(base64.urlsafe_b64decode(packet.strip())))
             if port.in_waiting == 0:
                 port.write('n'.encode())
