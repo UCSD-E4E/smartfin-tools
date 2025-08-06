@@ -1,99 +1,143 @@
+import base64
+import shutil
 from argparse import ArgumentParser
 from base64 import b85decode, urlsafe_b64decode
-import base64
 from pathlib import Path
-import shutil
-from typing import Callable
+from typing import Callable, Dict, Tuple
+
 import pandas as pd
 
 import smartfin_tools.decoder as scd
+from smartfin_tools.common import ConverterType, Encoding, FileFormats
+from smartfin_tools.config import configure_logging
 
 
-def sfrToSfp(in_sfr: Path, out_sfp: Path, no_strip_padding: bool=False, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
-    with open(in_sfr, 'r') as sfr:
-        with open(out_sfp, 'wb') as sfp:
+def sfr_to_sfp(input_path: Path,
+               output_path: Path,
+               *,
+               strip_padding: bool = False,
+               decoder: Callable[[str], bytes] = urlsafe_b64decode):
+    """Converts Smartfin Records to Smartfin Packets (base64url to binary)
+
+    Args:
+        input_path (Path): Input path
+        output_path (Path): Output path
+        strip_padding (bool, optional): Flag to strip partial ensembles. 
+        Defaults to False.
+        decoder (Callable[[str], bytes], optional): Record Ascii to binary 
+        decoder. Defaults to urlsafe_b64decode.
+    """
+    with open(input_path, 'r', encoding='utf-8') as sfr:
+        with open(output_path, 'wb') as sfp:
             for record in sfr:
                 packet = decoder(record.strip())
-                if not no_strip_padding:
-                    packet = scd.stripPadding(packet)
+                if strip_padding:
+                    packet = scd.strip_padding(packet)
                 sfp.write(packet)
+
 
 def sfrToCsv(in_sfr: Path, out_csv: Path, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
     ensembles = []
     with open(in_sfr, 'r') as sfr:
         for record in sfr:
-            ensembles.extend(scd.decodeRecord(record.strip(), decoder=decoder))
-    
+            ensembles.extend(scd.decode_record(
+                record.strip(), decoder=decoder))
+
     df = pd.DataFrame(ensembles)
-    df = scd.convertToSI(df)
+    df = scd.convert_to_si(df)
     df.to_csv(out_csv)
 
-def sfpToCsv(in_sfp: Path, out_csv: Path):
+
+def sfp_to_csv(input_path: Path, output_path: Path):
+    """Converts Smartfin Packets to CSV format
+
+    Args:
+        input_path (Path): Input path
+        output_path (Path): Output path
+    """
     ensembles = []
-    with open(in_sfp, 'rb') as sfp:
-        data = sfp.read()
-        ensembles = scd.decodePacket(data)
-    
+    with open(input_path, 'rb') as handle:
+        data = handle.read()
+        ensembles = scd.decode_packet(data)
+
     df = pd.DataFrame(ensembles)
-    df = scd.convertToSI(df)
-    df.to_csv(out_csv)
+    df = scd.convert_to_si(df)
+    df.to_csv(output_path)
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument('input')
-    parser.add_argument('--input_type', default=None, choices=['sfr', 'sfp'])
-    parser.add_argument('output')
-    parser.add_argument('--output_type', default=None, choices=['sfp', 'csv'])
-    parser.add_argument('--no_strip_padding', action='store_true')
-    parser.add_argument(
-        '-e', '--encoding', choices=['base85', 'base64', 'base64url'], default='base64url')
 
-    args = parser.parse_args()
-    input_file = Path(args.input)
-    if not input_file.is_file():
-        raise RuntimeError("Not a file!")
-    
-    if args.input_type == None:
-        if input_file.suffix.lower() == '.sfr':
-            input_type = 'sfr'
-        elif input_file.suffix.lower() == '.sfp':
-            input_type = 'sfp'
-        else:
-            raise RuntimeError("Ambiguous input type!")
-    else:
-        input_type = args.input_type
+def sf_convert(input_file: Path,
+               input_type: FileFormats | None,
+               output_file: Path,
+               output_type: FileFormats | None,
+               encoding: Encoding
+               ) -> None:
+    """Convert input file to output file
 
-    output_file = Path(args.output)
-    if args.output_type == None:
-        if output_file.suffix.lower() == '.sfp':
-            output_type = 'sfp'
-        elif output_file.suffix.lower() == '.csv':
-            output_type = 'csv'
-        else:
-            raise RuntimeError("Ambiguous output type!")
-    else:
-        output_type = args.output_type
+    Args:
+        input_file (Path): Input Path
+        input_type (FileFormats | None): File format, defaults to input path
+        output_file (Path): Output path
+        output_type (FileFormats | None): Output file format, defaults to
+        output path extension
+        encoding (Encoding): Record encoding
+
+    """
+    if input_type is None:
+        input_type = FileFormats(input_file.suffix.lower())
+
+    if output_type is None:
+        output_type = FileFormats(output_file.suffix.lower())
 
     if input_type == output_type:
         shutil.copy(input_file, output_file)
+        return
 
-    if args.encoding == 'base64url':
-        decoder = base64.urlsafe_b64decode
-    elif args.encoding == 'base64':
-        decoder = base64.b64decode
-    elif args.encoding == 'base85':
-        decoder = base64.b85decode
-    else:
-        raise NotImplementedError(f"Unknown encoding {args.encoding}")
-    
-    if input_type == 'sfr' and output_type == 'sfp':
-        sfrToSfp(input_file, output_file, no_strip_padding=args.no_strip_padding, decoder=decoder)
-    elif input_type == 'sfp' and output_type == 'csv':
-        sfpToCsv(input_file, output_file)
-    elif input_type == 'sfr' and output_type == 'csv':
-        sfrToCsv(input_file, output_file, decoder=decoder)
-    else:
-        raise RuntimeError("Unknown conversion")
+    decoder_map: Dict[Encoding, Callable[[str], bytes]] = {
+        Encoding.BASE64: base64.b64decode,
+        Encoding.BASE64URL: base64.urlsafe_b64decode,
+        Encoding.BASE85: base64.b85decode
+    }
+    decoder = decoder_map[encoding]
+
+    conversion_map: Dict[Tuple[FileFormats, FileFormats], ConverterType] = {
+        (FileFormats.SFR, FileFormats.SFP): lambda input_path, output_path: sfr_to_sfp(input_path, output_path, decoder=decoder),
+        (FileFormats.SFP, FileFormats.CSV): sfp_to_csv,
+        (FileFormats.SFR, FileFormats.CSV): lambda input_path, output_path: sfrToCsv(input_path, output_path, decoder=decoder)
+    }
+
+    conversion_type = (input_type, output_type)
+    conversion_map[conversion_type](
+        input_path=input_file,
+        output_path=output_file
+    )
+
+
+def main():
+    """Main entry point
+    """
+    configure_logging()
+    parser = ArgumentParser()
+    parser.add_argument('input_file',
+                        type=Path)
+    parser.add_argument('--input_type',
+                        default=None,
+                        type=FileFormats,
+                        choices=list(FileFormats))
+    parser.add_argument('output_file',
+                        type=Path)
+    parser.add_argument('--output_type',
+                        default=None,
+                        type=FileFormats,
+                        choices=list(FileFormats))
+    parser.add_argument('-e', '--encoding',
+                        type=Encoding,
+                        choices=list(Encoding),
+                        default=Encoding.BASE64URL)
+
+    args = parser.parse_args()
+    kwargs = vars(args)
+    sf_convert(**kwargs)
+
 
 if __name__ == '__main__':
     main()

@@ -13,11 +13,11 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
     ensembles = []
     with open(fileName, 'r', encoding='utf-8') as dataFile:
         for line in dataFile:
-            ensembles.extend(smartfin_tools.decoder.decodeRecord(
+            ensembles.extend(smartfin_tools.decoder.decode_record(
                 line.strip(), decoder=decoder))
 
     df = pd.DataFrame(ensembles)
-    df = smartfin_tools.decoder.convertToSI(df)
+    df = smartfin_tools.decoder.convert_to_si(df)
 
     plot_dir = output_dir / fileName.stem
     plot_dir.mkdir(parents=True, exist_ok=True)
