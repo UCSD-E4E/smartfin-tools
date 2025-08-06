@@ -2,9 +2,9 @@ name: Semantic Release
 
 on:
   workflow_run:
-    # workflows:
-    #   - Pylint
-    #   - PyTest
+    workflows:
+      - Pylint
+      # - PyTest
     branches:
       - main
     types: 
