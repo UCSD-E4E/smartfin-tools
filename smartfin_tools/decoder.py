@@ -1,13 +1,18 @@
-#!/usr/bin/env python3
-import struct
+'''Record decoder
+'''
 import base64
-from typing import Callable, Dict, List, Union
-import pandas as pd
-import numpy as np
 import logging
+import struct
+from typing import Callable, Dict, List, Union
 
-def decodeRecord(record: str, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode) -> List[Dict[str, Union[int, float]]]:
-    logger = logging.getLogger("Smartfin Decoder")
+import numpy as np
+import pandas as pd
+
+
+def decodeRecord(record: str,
+                 *,
+                 decoder: Callable[[str], bytes] = base64.urlsafe_b64decode
+                 ) -> List[Dict[str, Union[int, float]]]:
     packet = decoder(record)
     return decodePacket(packet)
 
@@ -75,97 +80,99 @@ __parserTable = {
     }
 }
 
+
 def stripPadding(packet: bytes) -> bytes:
     logger = logging.getLogger("Smartfin Decoder")
-    strippedData = b''
+    stripped_data = b''
     idx = 0
     start_idx = 0
     while idx < len(packet):
         if len(packet) - idx < 3:
             break
-        dataTimeByte = packet[idx]
+        datetime_byte = packet[idx]
         idx += 1
-        timeMSB: int = struct.unpack("<H", packet[idx:idx + 2])[0]
+        time_msb: int = struct.unpack("<H", packet[idx:idx + 2])[0]
         idx += 2
-        time_ds = ((dataTimeByte & 0xF0) >> 4) | (timeMSB << 4)
-        dataType = dataTimeByte & 0x0F
-        if dataType in __parserTable:
+        time_ds = ((datetime_byte & 0xF0) >> 4) | (time_msb << 4)
+        data_type = datetime_byte & 0x0F
+        if data_type in __parserTable:
             # can use from parser table
-            parseParams = __parserTable[dataType]
-            idx += parseParams['len']
-        elif dataType == 0:
+            parse_params = __parserTable[data_type]
+            idx += parse_params['len']
+        elif data_type == 0:
             # Padding
             # logger.warning(f"Unknown data type: 0 at index {idx}")
-            strippedData += packet[start_idx:idx-3]
+            stripped_data += packet[start_idx:idx-3]
             idx -= 2
             start_idx = idx
             continue
-        elif dataType == 0x0F:
+        elif data_type == 0x0F:
             # text
-            textLen = packet[idx]
+            text_len = packet[idx]
             idx += 1
-            idx += textLen
+            idx += text_len
         else:
-            logger.warning(f'Unknown data type: {dataType}')
-    return strippedData
+            logger.warning('Unknown data type: %d', data_type)
+    return stripped_data
+
 
 def decodePacket(packet: bytes) -> List[Dict[str, Union[int, float]]]:
     logger = logging.getLogger("Smartfin Decoder")
-    packetList = []
+    packet_list = []
     idx = 0
     while idx < len(packet):
         if len(packet) - idx < 3:
             break
-        dataTimeByte = packet[idx]
+        datetime_byte = packet[idx]
         idx += 1
-        timeMSB: int = struct.unpack("<H", packet[idx:idx + 2])[0]
+        time_msb: int = struct.unpack("<H", packet[idx:idx + 2])[0]
         idx += 2
-        time_ds = ((dataTimeByte & 0xF0) >> 4) | (timeMSB << 4)
+        time_ds = ((datetime_byte & 0xF0) >> 4) | (time_msb << 4)
         timestamp = time_ds / 10.
-        dataType = dataTimeByte & 0x0F
-        if dataType in __parserTable:
+        data_type = datetime_byte & 0x0F
+        if data_type in __parserTable:
             # can use from parser table
-            parseParams = __parserTable[dataType]
-            assert(len(packet) - idx >= parseParams['len'])
-            ensemblePayload = packet[idx:idx + parseParams['len']]
-            idx += parseParams['len']
-            ensembleFields = struct.unpack(parseParams['fmt'], ensemblePayload)
+            parse_params = __parserTable[data_type]
+            assert len(packet) - idx >= parse_params['len']
+            ens_payload = packet[idx:idx + parse_params['len']]
+            idx += parse_params['len']
+            ens_fields = struct.unpack(parse_params['fmt'], ens_payload)
             ensemble = {}
-            assert(len(parseParams['names']) == len(ensembleFields))
-            for i in range(len(parseParams['names'])):
-                ensemble[parseParams['names'][i]] = ensembleFields[i]
+            assert (len(parse_params['names']) == len(ens_fields))
+            for i in range(len(parse_params['names'])):
+                ensemble[parse_params['names'][i]] = ens_fields[i]
             ensemble['timestamp'] = timestamp
-            ensemble['dataType'] = dataType
-            packetList.append(ensemble)
-        elif dataType == 0:
+            ensemble['dataType'] = data_type
+            packet_list.append(ensemble)
+        elif data_type == 0:
             # Padding
             # logger.warning(f"Unknown data type: 0 at index {idx}")
             idx -= 2
             continue
-        elif dataType == 0x0F:
+        elif data_type == 0x0F:
             # text
-            textLen = packet[idx]
-            assert(len(packet) - idx >= textLen)
+            text_len = packet[idx]
+            assert len(packet) - idx >= text_len
             idx += 1
-            text = packet[idx:idx + textLen].decode()
-            idx += textLen
+            text = packet[idx:idx + text_len].decode()
+            idx += text_len
             ensemble = {}
             ensemble['text'] = text
             ensemble['timestamp'] = timestamp
-            ensemble['dataType'] = dataType
-            packetList.append(ensemble)
+            ensemble['dataType'] = data_type
+            packet_list.append(ensemble)
         else:
-            logger.warning(f'Unknown data type: {dataType}')
-    return packetList
+            logger.warning('Unknown data type: %d', data_type)
+    return packet_list
 
 
 def convertToSI(df: pd.DataFrame) -> pd.DataFrame:
     df['Temperature'] = df['temp+water'] / 333.87 + 21.0
-    waterDetect = list(df['Temperature'])
-    for i in range(len(waterDetect)):
-        if not np.isnan(waterDetect[i]):
-            waterDetect[i] = (waterDetect[i] >= 0)
-    df['Water Detect'] = waterDetect
+    water_detect = list(df['Temperature'])
+    for idx, elem in enumerate(water_detect):
+        if not np.isnan(elem):
+            water_detect[idx] = elem >= 0
+    df['Water Detect'] = water_detect
     if 'xAcc' in df.columns:
         df['X Acceleration'] = df['xAcc'] / 16384
     if 'yAcc' in df.columns:
@@ -185,11 +192,3 @@ def convertToSI(df: pd.DataFrame) -> pd.DataFrame:
     if 'zMag' in df.columns:
         df['Z Magnetic Field'] = df['zMag'] * 0.15
     return df
-
-
-if __name__ == "__main__":
-    ensembles = []
-    with open('e4e/data.txt', 'r') as dataFile:
-        for line in dataFile:
-            ensembles.append(decodeRecord(line.strip()))
-    print(ensembles)
