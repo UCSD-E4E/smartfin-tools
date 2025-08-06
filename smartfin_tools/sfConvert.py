@@ -8,6 +8,7 @@ from typing import Callable, Dict, Tuple
 import pandas as pd
 
 import smartfin_tools.decoder as scd
+from smartfin_tools import __version__
 from smartfin_tools.common import ConverterType, Encoding, FileFormats
 from smartfin_tools.config import configure_logging
 
@@ -116,7 +117,9 @@ def main():
     """Main entry point
     """
     configure_logging()
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description=f'Smartfin Data Converter {__version__}'
+    )
     parser.add_argument('input_file',
                         type=Path)
     parser.add_argument('--input_type',

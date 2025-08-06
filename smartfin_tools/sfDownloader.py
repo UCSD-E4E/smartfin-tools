@@ -4,12 +4,12 @@ import base64
 import time
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import semantic_version
 import serial
 from tqdm.auto import tqdm
-
+from smartfin_tools import __version__
 
 def discoverAndReset(port:serial.Serial):
     port.flush()
@@ -34,7 +34,9 @@ def discoverAndReset(port:serial.Serial):
         raise RuntimeError("Unknown state")
 
 def sfDownloader():
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description=f'Smartfin Downloader {__version__}'
+    )
     parser.add_argument("port")
     parser.add_argument('--delete', '-d', action="store_true")
     parser.add_argument('--output_dir', '-o', default='./data')
@@ -63,11 +65,12 @@ def sfDownloader():
         port.read_until('\n>'.encode())
 
 def flogDownloader():
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description=f'Smartfin FLOG Downloader {__version__}'
+    )
     parser.add_argument('port')
     parser.add_argument('output_file', default='flog.txt')
     parser.add_argument('--clear', '-c', action='store_true')
-    
     args = parser.parse_args()
     clear = args.clear
     output_file = args.output_file

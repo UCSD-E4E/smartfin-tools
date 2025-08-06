@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 import smartfin_tools.decoder
+from smartfin_tools import __version__
 
 
 def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode):
@@ -146,7 +147,9 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
 
 
 def main():
-    parser = argparse.ArgumentParser('Smartfin Data Plotter')
+    parser = argparse.ArgumentParser(
+        description=f'Smartfin Data Plotter {__version__}'
+    )
     parser.add_argument('sfr_file', default=None, type=Path)
     parser.add_argument('output', default=Path('.'), type=Path)
     parser.add_argument(
