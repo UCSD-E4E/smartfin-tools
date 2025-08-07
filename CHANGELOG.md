@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v1.1.1 (2025-08-07)
+
+### Bug Fixes
+
+- Supporting split ensembles
+  ([`e045ee3`](https://github.com/UCSD-E4E/smartfin-tools/commit/e045ee3d4ce5ef2909a9b87acffe02399815cff5))
+
+- Switches to table based conversion
+  ([`8616773`](https://github.com/UCSD-E4E/smartfin-tools/commit/8616773861765103b620c8d85c2f99de2164f7d0))
+
+### Chores
+
+- Fixes pyproject.toml
+  ([`dd29d64`](https://github.com/UCSD-E4E/smartfin-tools/commit/dd29d64a8569493afadd7d124896315f26101449))
+
+### Continuous Integration
+
+- Adds IMU data test
+  ([`83d935a`](https://github.com/UCSD-E4E/smartfin-tools/commit/83d935a8375eed4943751e0226de0e5d26d49743))
+
+
 ## v1.1.0 (2025-08-06)
 
 ### Bug Fixes
