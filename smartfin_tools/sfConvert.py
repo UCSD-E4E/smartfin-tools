@@ -1,7 +1,9 @@
+'''Smartfin Data Conversion
+'''
 import base64
 import shutil
 from argparse import ArgumentParser
-from base64 import b85decode, urlsafe_b64decode
+from base64 import urlsafe_b64decode
 from pathlib import Path
 from typing import Callable, Dict, Tuple
 
@@ -37,12 +39,16 @@ def sfr_to_sfp(input_path: Path,
                 sfp.write(packet)
 
 
-def sfrToCsv(in_sfr: Path, out_csv: Path, *, decoder: Callable[[str], bytes] = urlsafe_b64decode):
-    ensembles = []
-    with open(in_sfr, 'r') as sfr:
+def sfr_to_csv(in_sfr: Path,
+               out_csv: Path,
+               *,
+               decoder: Callable[[str], bytes] = urlsafe_b64decode):
+    data = b''
+    with open(in_sfr, 'r', encoding='utf-8') as sfr:
         for record in sfr:
-            ensembles.extend(scd.decode_record(
-                record.strip(), decoder=decoder))
+            data += decoder(record)
+
+    ensembles = scd.decode_packet(data)
 
     df = pd.DataFrame(ensembles)
     df = scd.convert_to_si(df)
@@ -103,7 +109,7 @@ def sf_convert(input_file: Path,
     conversion_map: Dict[Tuple[FileFormats, FileFormats], ConverterType] = {
         (FileFormats.SFR, FileFormats.SFP): lambda input_path, output_path: sfr_to_sfp(input_path, output_path, decoder=decoder),
         (FileFormats.SFP, FileFormats.CSV): sfp_to_csv,
-        (FileFormats.SFR, FileFormats.CSV): lambda input_path, output_path: sfrToCsv(input_path, output_path, decoder=decoder)
+        (FileFormats.SFR, FileFormats.CSV): lambda input_path, output_path: sfr_to_csv(input_path, output_path, decoder=decoder)
     }
 
     conversion_type = (input_type, output_type)
