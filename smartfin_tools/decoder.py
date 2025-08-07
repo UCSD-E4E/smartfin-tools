@@ -3,7 +3,7 @@
 import base64
 import logging
 import struct
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -75,7 +75,8 @@ __parserTable = {
     },
     0x0C: {
         'fmt': '<hhhhhhhhh',
-        'names': ['xAcc', 'yAcc', 'zAcc', 'xAng', 'yAng', 'zAng', 'xMag', 'yMag', 'zMag']
+        'names': ['xAccQ14', 'yAccQ14', 'zAccQ14', 'xAngQ7', 'yAngQ7', 'zAngQ7',
+                  'xMagQ3', 'yMagQ3', 'zMagQ3']
     }
 }
 
@@ -187,6 +188,30 @@ def decode_packet(packet: bytes) -> List[Dict[str, Union[int, float]]]:
     return packet_list
 
 
+si_conversions: Dict[str, Tuple[str, Callable]] = {
+    'timestamp': ('Timestamp (s)', lambda x: x),
+    'temp': ('Temperature (C)', lambda x: x / 128),
+    'water': ('Water Detect', lambda x: x > 0),
+    'xAcc': ('X Acceleration (m/s^2)', lambda x: x / 16384),
+    'yAcc': ('Y Acceleration (m/s^2)', lambda x: x / 16384),
+    'zAcc': ('Z Acceleration (m/s^2)', lambda x: x / 16384),
+    'xGyro': ('X Angular Velocity (deg/s)', lambda x: x / 131.072),
+    'yGyro': ('Y Angular Velocity (deg/s)', lambda x: x / 131.072),
+    'zGyro': ('Z Angular Velocity (deg/s)', lambda x: x / 131.072),
+    'xMag': ('X Magnetic Field (uT)', lambda x: x * 0.15),
+    'yMag': ('Y Magnetic Field (uT)', lambda x: x * 0.15),
+    'zMag': ('Z Magnetic Field (uT)', lambda x: x * 0.15),
+    'xAccQ14': ('X Acceleration (m/s^2)', lambda x: x / 16384),
+    'yAccQ14': ('Y Acceleration (m/s^2)', lambda x: x / 16384),
+    'zAccQ14': ('Z Acceleration (m/s^2)', lambda x: x / 16384),
+    'xGyroQ7': ('X Angular Velocity (deg/s)', lambda x: x / 128),
+    'yGyroQ7': ('Y Angular Velocity (deg/s)', lambda x: x / 128),
+    'zGyroQ7': ('Z Angular Velocity (deg/s)', lambda x: x / 128),
+    'xMagQ3': ('X Magnetic Field (uT)', lambda x: x / 8),
+    'yMagQ3': ('Y Magnetic Field (uT)', lambda x: x / 8),
+    'zMagQ3': ('Z Magnetic Field (uT)', lambda x: x / 8),
+}
+
 def convert_to_si(df: pd.DataFrame) -> pd.DataFrame:
     """Converts columns to SI units
 
@@ -196,26 +221,10 @@ def convert_to_si(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: SI Columned dataframe
     """
-    if 'temp' in df.columns:
-        df['Temperature'] = df['temp'] / 128
-    if 'water' in df.columns:
-        df['Water Detect'] = df['water'].astype(bool)
-    if 'xAcc' in df.columns:
-        df['X Acceleration'] = df['xAcc'] / 16384
-    if 'yAcc' in df.columns:
-        df['Y Acceleration'] = df['yAcc'] / 16384
-    if 'zAcc' in df.columns:
-        df['Z Acceleration'] = df['zAcc'] / 16384
-    if 'xGyro' in df.columns:
-        df['X Angular Velocity'] = df['xGyro'] / 131.072
-    if 'yGyro' in df.columns:
-        df['Y Angular Velocity'] = df['yGyro'] / 131.072
-    if 'zGyro' in df.columns:
-        df['Z Angular Velocity'] = df['zGyro'] / 131.072
-    if 'xMag' in df.columns:
-        df['X Magnetic Field'] = df['xMag'] * 0.15
-    if 'yMag' in df.columns:
-        df['Y Magnetic Field'] = df['yMag'] * 0.15
-    if 'zMag' in df.columns:
-        df['Z Magnetic Field'] = df['zMag'] * 0.15
+    columns = df.columns.to_list()
+    for col in columns:
+        if col not in si_conversions:
+            continue
+        mapping = si_conversions[col]
+        df[mapping[0]] = mapping[1](df[col])
     return df
