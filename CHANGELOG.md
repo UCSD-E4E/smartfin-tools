@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.0 (2025-08-17)
+
+### Features
+
+- Adds -n/--number flag for downloading last N files
+  ([`d1290f6`](https://github.com/UCSD-E4E/smartfin-tools/commit/d1290f62f8b9705aced4a794b8c4b0445017c62d))
+
+
 ## v1.1.1 (2025-08-07)
 
 ### Bug Fixes
