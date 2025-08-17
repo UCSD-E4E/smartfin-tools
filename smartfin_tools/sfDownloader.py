@@ -40,6 +40,11 @@ def sfDownloader():
     parser.add_argument("port")
     parser.add_argument('--delete', '-d', action="store_true")
     parser.add_argument('--output_dir', '-o', default='./data')
+    parser.add_argument('-n', '--number',
+                        type=int,
+                        help=('Number of files to grab, defaults to all. If '
+                              'provided as N, downloads the last N files.'),
+                        default=None)
 
     args = parser.parse_args()
     delete = args.delete
@@ -55,7 +60,7 @@ def sfDownloader():
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        download_data(delete, port, files, output_dir)
+        download_data(delete, port, files, output_dir, tail=args.number)
             
         port.write('q\r'.encode())
         port.read_until('\n>'.encode())
@@ -83,7 +88,14 @@ def flogDownloader():
         port.write('D\r'.encode())
 
 
-def download_data(delete: bool, port: serial.Serial, files: Dict[str, int], output_dir: Path) -> Dict[str, List[str]]:
+def download_data(delete: bool,
+                  port: serial.Serial,
+                  files: Dict[str, int],
+                  output_dir: Path,
+                  *,
+                  tail: int | None = None) -> None:
+    if tail is not None:
+        files = {file: files[file] for file in sorted(files.keys())[-tail:]}
     for file, filesize in files.items():
         port.write('t\r'.encode())
         response = port.read_until('dump: '.encode()).decode().splitlines()
@@ -97,18 +109,18 @@ def download_data(delete: bool, port: serial.Serial, files: Dict[str, int], outp
 
         encoded_data = ''
         n_packets = 0
-        bar = tqdm(total=filesize, unit='B', desc=publish_name,
+        pbar = tqdm(total=filesize, unit='B', desc=publish_name,
                    unit_scale=True, unit_divisor=1024)
         while True:
             packet = port.read_until('\n'.encode()).decode()
             encoded_data += packet
             if len(packet.strip()) > 0:
                 n_packets += 1
-            bar.update(len(base64.urlsafe_b64decode(packet.strip())))
+            pbar.update(len(base64.urlsafe_b64decode(packet.strip())))
             if port.in_waiting == 0:
                 port.write('n'.encode())
             else:
-                bar.close()
+                pbar.close()
                 break
 
 
