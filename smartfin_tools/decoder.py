@@ -140,17 +140,17 @@ def decode_packet(packet: bytes) -> List[Dict[str, Union[int, float]]]:
     """
     logger = logging.getLogger("Smartfin Decoder")
     packet_list = []
+    blob_list: List[bytes] = []
+    packet_counter = 0
     idx = 0
+    start_idx = 0
     while idx < len(packet):
+        start_idx = idx
         if len(packet) - idx < 3:
             break
-        datetime_byte = packet[idx]
-        idx += 1
-        time_msb: int = struct.unpack("<H", packet[idx:idx + 2])[0]
-        idx += 2
-        time_ds = ((datetime_byte & 0xF0) << 12) | time_msb
-        timestamp = time_ds / 10.
-        data_type = datetime_byte & 0x0F
+        next_candidate = packet[idx:]
+        timestamp, data_type = extract_header(next_candidate)
+        idx += 3
         if data_type in __parserTable:
             # can use from parser table
             parse_params = __parserTable[data_type]
@@ -166,9 +166,12 @@ def decode_packet(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             ensemble['timestamp'] = timestamp
             ensemble['dataType'] = data_type
             packet_list.append(ensemble)
+            binary_ensemble = packet[start_idx:idx]
+            blob_list.append(binary_ensemble)
+            packet_counter += 1
         elif data_type == 0:
             # Padding
-            logger.warning('Unknown data type: 0 at index %d', idx)
+            # logger.warning('Unknown data type: 0 at index %d', idx)
             idx -= 2
             continue
         elif data_type == 0x0F:
@@ -183,9 +186,28 @@ def decode_packet(packet: bytes) -> List[Dict[str, Union[int, float]]]:
             ensemble['timestamp'] = timestamp
             ensemble['dataType'] = data_type
             packet_list.append(ensemble)
+            blob_list.append(packet[start_idx:idx])
+            packet_counter += 1
         else:
             logger.warning('Unknown data type: %d', data_type)
     return packet_list
+
+
+def extract_header(packet: bytes) -> Tuple[float, int]:
+    """Extracts the next packet header.  Always consumes 3 bytes
+
+    Args:
+        packet (bytes): Binary blob
+
+    Returns:
+        Tuple[float, int]: timestamp (ds), data type
+    """
+    datetime_byte = packet[0]
+    time_msb: int = struct.unpack("<H", packet[1:3])[0]
+    time_ds = ((datetime_byte & 0xF0) >> 4) | (time_msb << 4)
+    timestamp = time_ds / 10.
+    data_type = datetime_byte & 0x0F
+    return timestamp, data_type
 
 
 si_conversions: Dict[str, Tuple[str, Callable]] = {

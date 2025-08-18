@@ -5,7 +5,7 @@ import shutil
 from argparse import ArgumentParser
 from base64 import urlsafe_b64decode
 from pathlib import Path
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import pandas as pd
 
@@ -43,12 +43,12 @@ def sfr_to_csv(in_sfr: Path,
                out_csv: Path,
                *,
                decoder: Callable[[str], bytes] = urlsafe_b64decode):
-    data = b''
+    ensembles: List[Dict[str, int | float]] = []
     with open(in_sfr, 'r', encoding='utf-8') as sfr:
         for record in sfr:
-            data += decoder(record)
+            data = decoder(record)
+            ensembles.extend(scd.decode_packet(data))
 
-    ensembles = scd.decode_packet(data)
 
     df = pd.DataFrame(ensembles)
     df = scd.convert_to_si(df)
