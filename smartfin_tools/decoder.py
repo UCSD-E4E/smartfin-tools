@@ -1,30 +1,10 @@
 '''Record decoder
 '''
-import base64
 import logging
 import struct
 from typing import Callable, Dict, List, Tuple, Union
 
 import pandas as pd
-
-
-def decode_record(record: str,
-                 *,
-                 decoder: Callable[[str], bytes] = base64.urlsafe_b64decode
-                 ) -> List[Dict[str, Union[int, float]]]:
-    """Decodes ASCII encoded record of packets to list of data ensembles
-
-    Args:
-        record (str): ASCII Encoded data ensembles
-        decoder (Callable[[str], bytes], optional): ASCII decoder function. 
-        Defaults to base64.urlsafe_b64decode.
-
-    Returns:
-        List[Dict[str, Union[int, float]]]: List of data ensembles
-    """
-    packet = decoder(record)
-    return decode_packet(packet)
-
 
 __parserTable = {
     1: {
@@ -75,7 +55,7 @@ __parserTable = {
     },
     0x0C: {
         'fmt': '<hhhhhhhhh',
-        'names': ['xAccQ14', 'yAccQ14', 'zAccQ14', 'xAngQ7', 'yAngQ7', 'zAngQ7',
+        'names': ['xAccQ10', 'yAccQ10', 'zAccQ10', 'xAngQ7', 'yAngQ7', 'zAngQ7',
                   'xMagQ3', 'yMagQ3', 'zMagQ3']
     }
 }
@@ -223,9 +203,9 @@ si_conversions: Dict[str, Tuple[str, Callable]] = {
     'xMag': ('X Magnetic Field (uT)', lambda x: x * 0.15),
     'yMag': ('Y Magnetic Field (uT)', lambda x: x * 0.15),
     'zMag': ('Z Magnetic Field (uT)', lambda x: x * 0.15),
-    'xAccQ14': ('X Acceleration (m/s^2)', lambda x: x / 16384),
-    'yAccQ14': ('Y Acceleration (m/s^2)', lambda x: x / 16384),
-    'zAccQ14': ('Z Acceleration (m/s^2)', lambda x: x / 16384),
+    'xAccQ10': ('X Acceleration (m/s^2)', lambda x: x / 1024),
+    'yAccQ10': ('Y Acceleration (m/s^2)', lambda x: x / 1024),
+    'zAccQ10': ('Z Acceleration (m/s^2)', lambda x: x / 1024),
     'xGyroQ7': ('X Angular Velocity (deg/s)', lambda x: x / 128),
     'yGyroQ7': ('Y Angular Velocity (deg/s)', lambda x: x / 128),
     'zGyroQ7': ('Z Angular Velocity (deg/s)', lambda x: x / 128),

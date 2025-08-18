@@ -1,3 +1,5 @@
+'''Smartfin Plotting Tool
+'''
 import argparse
 import base64
 from pathlib import Path
@@ -12,10 +14,10 @@ from smartfin_tools import __version__
 
 def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes] = base64.urlsafe_b64decode):
     ensembles = []
-    with open(fileName, 'r', encoding='utf-8') as dataFile:
-        for line in dataFile:
-            ensembles.extend(smartfin_tools.decoder.decode_record(
-                line.strip(), decoder=decoder))
+    with open(fileName, 'r', encoding='utf-8') as handle:
+        for record in handle:
+            data = decoder(record)
+            ensembles.extend(smartfin_tools.decoder.decode_packet(data))
 
     df = pd.DataFrame(ensembles)
     df = smartfin_tools.decoder.convert_to_si(df)
@@ -31,7 +33,7 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
     plt.savefig(plot_dir / 'EnsembleNumber.png')
     plt.close()
 
-    plt.scatter(df['timestamp'], df['Temperature'])
+    plt.scatter(df['timestamp'], df['Temperature (C)'])
     plt.xlabel('Time (s)')
     plt.ylabel('Temperature (C)')
     plt.title("Temperature vs Time")
@@ -55,35 +57,35 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
     plt.savefig(plot_dir / "DataTypes.png")
     plt.close()
 
-    if "X Acceleration" in df.columns:
-        plt.scatter(df['timestamp'], df['X Acceleration'])
+    if "X Acceleration (m/s^2)" in df.columns:
+        plt.scatter(df['timestamp'], df['X Acceleration (m/s^2)'])
         plt.xlabel('Time (s)')
-        plt.ylabel('Acceleration (g)')
+        plt.ylabel('Acceleration (m/s^2)')
         plt.title('X Acceleration')
         plt.grid()
         plt.savefig(plot_dir / 'Acceleration_x.png')
         plt.close()
 
-    if "Y Acceleration" in df.columns:
-        plt.scatter(df['timestamp'], df['Y Acceleration'])
+    if "Y Acceleration (m/s^2)" in df.columns:
+        plt.scatter(df['timestamp'], df['Y Acceleration (m/s^2)'])
         plt.xlabel('Time (s)')
-        plt.ylabel('Acceleration (g)')
+        plt.ylabel('Acceleration (m/s^2)')
         plt.title('Y Acceleration')
         plt.grid()
         plt.savefig(plot_dir / 'Acceleration_y.png')
         plt.close()
 
-    if "Z Acceleration" in df.columns:
-        plt.scatter(df['timestamp'], df['Z Acceleration'])
+    if "Z Acceleration (m/s^2)" in df.columns:
+        plt.scatter(df['timestamp'], df['Z Acceleration (m/s^2)'])
         plt.xlabel('Time (s)')
-        plt.ylabel('Acceleration (g)')
+        plt.ylabel('Acceleration (m/s^2)')
         plt.title('Z Acceleration')
         plt.grid()
         plt.savefig(plot_dir / 'Acceleration_z.png')
         plt.close()
 
-    if "X Angular Velocity" in df.columns:
-        plt.scatter(df['timestamp'], df['X Angular Velocity'])
+    if "X Angular Velocity (deg/s)" in df.columns:
+        plt.scatter(df['timestamp'], df['X Angular Velocity (deg/s)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('X Angular Velocity')
@@ -91,8 +93,8 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
         plt.savefig(plot_dir / 'AngularVel_x.png')
         plt.close()
 
-    if "Y Angular Velocity" in df.columns:
-        plt.scatter(df['timestamp'], df['Y Angular Velocity'])
+    if "Y Angular Velocity (deg/s)" in df.columns:
+        plt.scatter(df['timestamp'], df['Y Angular Velocity (deg/s)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Y Angular Velocity')
@@ -100,8 +102,8 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
         plt.savefig(plot_dir / 'AngularVel_y.png')
         plt.close()
 
-    if "Z Angular Velocity" in df.columns:
-        plt.scatter(df['timestamp'], df['Z Angular Velocity'])
+    if "Z Angular Velocity (deg/s)" in df.columns:
+        plt.scatter(df['timestamp'], df['Z Angular Velocity (deg/s)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Angular Velocity (deg/s)')
         plt.title('Z Angular Velocity')
@@ -109,8 +111,8 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
         plt.savefig(plot_dir / 'AngularVel_z.png')
         plt.close()
 
-    if "X Magnetic Field" in df.columns:
-        plt.scatter(df['timestamp'], df['X Magnetic Field'])
+    if "X Magnetic Field (uT)" in df.columns:
+        plt.scatter(df['timestamp'], df['X Magnetic Field (uT)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('X Magnetic Field')
@@ -118,8 +120,8 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
         plt.savefig(plot_dir / 'Magfield_x.png')
         plt.close()
 
-    if "Y Magnetic Field" in df.columns:
-        plt.scatter(df['timestamp'], df['Y Magnetic Field'])
+    if "Y Magnetic Field (uT)" in df.columns:
+        plt.scatter(df['timestamp'], df['Y Magnetic Field (uT)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Y Magnetic Field')
@@ -127,8 +129,8 @@ def plotFile(fileName: Path, output_dir: Path, *, decoder: Callable[[str], bytes
         plt.savefig(plot_dir / 'Magfield_y.png')
         plt.close()
 
-    if "Z Magnetic Field" in df.columns:
-        plt.scatter(df['timestamp'], df['Z Magnetic Field'])
+    if "Z Magnetic Field (uT)" in df.columns:
+        plt.scatter(df['timestamp'], df['Z Magnetic Field (uT)'])
         plt.xlabel('Time (s)')
         plt.ylabel('Magnetic Field Strength (uT)')
         plt.title('Z Magnetic Field')
