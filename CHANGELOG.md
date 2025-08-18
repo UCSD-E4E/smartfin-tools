@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.3.0 (2025-08-18)
+
+### Bug Fixes
+
+- Fixes timestamp extraction and padding
+  ([`1b9cf79`](https://github.com/UCSD-E4E/smartfin-tools/commit/1b9cf79e9818537d6b4224f82bd2747b134c5e9d))
+
+### Features
+
+- Adds sfVerify
+  ([`96c5090`](https://github.com/UCSD-E4E/smartfin-tools/commit/96c5090c8e00fa25753aa179f60fbb58a5a04602))
+
+- Updates HDR ACC to Q10, updates graphs
+  ([`c085a0e`](https://github.com/UCSD-E4E/smartfin-tools/commit/c085a0ef5364286b061274f6f3066aeaabbd6f31))
+
+
 ## v1.2.0 (2025-08-17)
 
 ### Features
