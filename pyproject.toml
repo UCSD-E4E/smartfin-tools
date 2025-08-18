@@ -26,6 +26,7 @@ sfDownloader = 'smartfin_tools.sfDownloader:sfDownloader'
 sfFlogDownloader = 'smartfin_tools.sfDownloader:flogDownloader'
 sfPlotter = 'smartfin_tools.sfPlotter:main'
 sfConvert = 'smartfin_tools.sfConvert:main'
+sfVerify = 'smartfin_tools.sfVerify:main'
 sfTempCalibrator = 'smartfin_tools.temp_calibrator:main'
 
 [tool.poetry.group.dev.dependencies]
